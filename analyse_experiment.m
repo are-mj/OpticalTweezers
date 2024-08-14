@@ -14,12 +14,12 @@ function [Tp,Tr,pull,relax,t,f,x] = analyse_experiment(file,plotting)
     % datafolder = "Clean_files";  % OK for Karina files.  Generalize!!
     filename = fullfile(datafolder,file);
   end
-  [t,f,x] = read_experiment_file(filename);
+  [t,f,x,T] = read_experiment_file(filename);
   
   % Eliminate obviously faulty records
   bad = isnan(x) | isnan(f) | isnan(t);
   f(bad) = []; x(bad)=[]; t(bad) = [];
-  [t,f,x] = remove_time_loops(t,f,x);
+  [t,f,x,T] = remove_time_loops(t,f,x,T);
   
   % Make sure no f value == threshold:
   threshold = mean(f);
@@ -46,8 +46,9 @@ function [Tp,Tr,pull,relax,t,f,x] = analyse_experiment(file,plotting)
     tt = t(range);
     ff = f(range);
     xx = x(range);
+    TT = T(range);
     
-    [Tp_,Tr_,pull_,relax_] = analyse_section(tt,ff,xx,filename,threshold,plotting);
+    [Tp_,Tr_,pull_,relax_] = analyse_section(tt,ff,xx,TT,filename,threshold,plotting);
     Tp = [Tp;Tp_];
     Tr = [Tr;Tr_];
     pull_ = [pull;pull_];
@@ -59,7 +60,7 @@ function [Tp,Tr,pull,relax,t,f,x] = analyse_experiment(file,plotting)
     end
 end
 
-function [Tp,Tr,pull,relax] = analyse_section(t,f,x,filename,threshold,plotting)
+function [Tp,Tr,pull,relax] = analyse_section(t,f,x,T,filename,threshold,plotting)
 
   Tp = [];
   Tr = [];
@@ -166,7 +167,7 @@ function [Tp,Tr,pull,relax] = analyse_section(t,f,x,filename,threshold,plotting)
     s.t = t(valleypos(i):peakpos(i+peakfirst));
     s.f = f(valleypos(i):peakpos(i+peakfirst));
     s.x = x(valleypos(i):peakpos(i+peakfirst));
-    s.T = NaN;
+    s.T = T(valleypos(i):peakpos(i+peakfirst));
     s.pullingspeed = median(diff(s.x)./diff(s.t));
     s.file = filename;
     s = singlerip_finder(s,par_single);
@@ -183,7 +184,7 @@ function [Tp,Tr,pull,relax] = analyse_section(t,f,x,filename,threshold,plotting)
     r.t = t(peakpos(i):valleypos(i+1-peakfirst));
     r.f = f(peakpos(i):valleypos(i+1-peakfirst));
     r.x = x(peakpos(i):valleypos(i+1-peakfirst));
-    r.T = NaN;
+    r.T = T(peakpos(i):valleypos(i+1-peakfirst));
     r.pullingspeed = abs(median(diff(r.x)./diff(r.t)));
     r.file = filename;
     r = singlerip_finder(r,par_single);

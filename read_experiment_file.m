@@ -1,4 +1,4 @@
-function [t,f,x,shortname] = read_experiment_file(filename,detrend_x) 
+function [t,f,x,T,shortname] = read_experiment_file(filename,detrend_x) 
 % Reads a text file from molecular tweezers protein streching experient
 %   Either: Pre-processed file with three columns (e.g. from CleanData app)
 %   or original file from Tweezers software.
@@ -39,6 +39,8 @@ function [t,f,x,shortname] = read_experiment_file(filename,detrend_x)
   warning('on','MATLAB:table:ModifiedAndSavedVarnames');
 
   data = rmmissing(data);  % Remove rows with NaNs
+  % Temperature 
+  Tbath = T_from_COM(shortname); % Temperature outside cell
 
 %% Brief file format
   if width(data) == 3   
@@ -90,4 +92,6 @@ function [t,f,x,shortname] = read_experiment_file(filename,detrend_x)
   if detrend_x
     x = detrend(x); 
   end
+  T = Tbath*ones(size(t));
+  % Disregard any extra heating!!
 end
