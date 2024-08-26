@@ -1,5 +1,5 @@
 function T = create_table(st)
-% Create Matlab results table from pull or relax traces struct arrays
+% Create Matlab results from an array of pull or relax structs
   if isempty(st)
     T = [];
     return
@@ -14,8 +14,8 @@ function T = create_table(st)
   Slope = vertcat(st.slope);
   Pullingspeed = vertcat(st.pullingspeed); % Not implemented (yet)
   Temperature = vertcat(st.temperature);
-  % dt = vertcat(st.dt);
+  Timestep = vertcat(st.dt);
   % Lineno = vertcat(st.lineno);
   T = table(Filename,Time,Deltax,Force,Temperature,Forceshift,Trapx,...
-          Fdot,Slope,Pullingspeed);
+          Fdot,Slope,Pullingspeed,Timestep);
 end

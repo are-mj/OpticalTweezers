@@ -1,4 +1,4 @@
-function [pfx_a,pfx_b,pft_a,pft_b,fdot,fstep] = singlerip_finder_fit(s,rip_index,par)
+function [pfx_a,pfx_b,pft_a,pft_b,fdot,fstep,weight] = singlerip_finder_fit(s,rip_index,par)
 % Fit linear polynomials to f(x) before and after rips or zips
 % Returns data for potentital rips.
 % Input: s: stretching or relaxing trace with experiment results:
@@ -26,13 +26,14 @@ function [pfx_a,pfx_b,pft_a,pft_b,fdot,fstep] = singlerip_finder_fit(s,rip_index
   maxpoints = round(n_points*par.maxfitfraction);
   n_rips = numel(rip_index);  % NUmber of potential rips or zips
   rip_index = [rip_index;n_points-par.ripsteps];  % add virtual rip at end
-  % sgn =  sign(f(end)-f(1));
+  sgn =  sign(f(end)-f(1));
 
   % allocate space
   pfx_b = zeros(n_rips,2);  % Linear polynomial for f(x) before rip
   pfx_a = zeros(n_rips,2);  % Linear polynomial for f(x) after rip
   pft_b = zeros(n_rips,2);  % Linear polynomial for f(t) before rip
   pft_a = zeros(n_rips,2);  % Linear polynomial for f(t) after rip
+  noise = zeros(n_rips,1);
   
   fdot  = zeros(n_rips,1);  % Loading rate (df/dt before rip)
   fstep = zeros(n_rips,1);  % rip force change
@@ -77,12 +78,21 @@ function [pfx_a,pfx_b,pft_a,pft_b,fdot,fstep] = singlerip_finder_fit(s,rip_index
     pfx_a(i,:) = polyfit(x(fitrange_a),f(fitrange_a),1);
     pft_a(i,:) = polyfit(t(fitrange_a),f(fitrange_a),1);
     fstep(i)   = polyval(pft_b(i,:),t(rip_index(i)))-polyval(pft_a(i,:),t(rip_index(i)));
+    noise(i) = std(f(fitrange_b)-polyval(pft_b(i,:),t(fitrange_b)));
 
     % figure; plot(t,f,t(rip_index(i)),f(rip_index(i)),'*r');hold on;
     % plot(t(fitrange_b),polyval(pft_b(i,:),t(fitrange_b)),'k',t(fitrange_a),polyval(pft_a(i,:),t(fitrange_a)),'k')
   end
-  % 'Knees' in the force trace may confuse the step result.
-  % Check that the slope change before to after is not excessive:
-  bad = abs((pft_b(:,1)-pft_a(:,1))./pft_a(:,1)) > 1;
-  fstep(bad) = 0;
+
+  % Skip events if fstep < noise*par.noisefactors
+  noisefactor = (sgn>0) * par.noisefactor(1) + (sgn<0) *par.noisefactor(2);
+  ok = sgn*fstep >= max(par.min_fstep,noisefactor*noise);
+  % big changes in slope before and after a rip often yields too high fstep
+  % Create a weight to couteract this:
+  if any(ok)
+    % weight = sqrt(nanmin(slopediff(ok))./slopediff);  
+    weight = 1./(abs(log(pft_b(:,1)./pft_a(:,1)))+0.5);
+  else
+    weight = zeros(n_rips,1);
+  end
 end

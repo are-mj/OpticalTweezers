@@ -20,6 +20,7 @@ for i = 1:numel(files)
   [Tp,Tr] = analyse_experiment(files(i),plotting);
   TP =[TP;Tp];
   TR = [TR;Tr];
+  fprintf('Rips: %4d, Zips: %4d Filename: %s\n',height(Tp),height(Tr),files(i));
   if plotting
     drawnow;
   end

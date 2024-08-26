@@ -5,7 +5,7 @@ function [Tp,Tr,pull,relax,t,f,x] = analyse_experiment(file,plotting)
   if nargin < 2
     plotting = 0;
   end
-  % Allow 
+  % Allow file name containing full path
   if ischar(file)
     if strcmp(file(1:3),'C:\') | strcmp(file(1:3),'C:/') % Full path
       filename = string(file);
@@ -32,11 +32,15 @@ function [Tp,Tr,pull,relax,t,f,x] = analyse_experiment(file,plotting)
       hold on;
   end
 
-  % Create arrayy of sampling time orders of magnitude:
-  dtmag0 = round(log10(diff(t)));
+  % Analyse sections similar (order of magnitude) sampline times: 
+
+  % Create array of sampling time orders of magnitude:
+  % dtmag0 = round(log10(diff(t)));
   % Smooth out brief periods of aberrant smoing times
   % Find borders for sections with identical smoothed orders of madnitude 
-  section_borders = rle_smooth(dtmag0,5);
+  % section_borders = rle_smooth(dtmag0,5);
+  section_borders = frequency_split(t,f);
+
   Tp = [];
   Tr = [];
   pull = [];
@@ -51,17 +55,18 @@ function [Tp,Tr,pull,relax,t,f,x] = analyse_experiment(file,plotting)
     [Tp_,Tr_,pull_,relax_] = analyse_section(tt,ff,xx,TT,filename,threshold,plotting);
     Tp = [Tp;Tp_];
     Tr = [Tr;Tr_];
-    pull_ = [pull;pull_];
+    pull = [pull;pull_];
     relax = [relax;relax_];
     if plotting
       xlabel('Time (s)');
       ylabel('Force (pN)')
       title(file)
     end
+  end
 end
 
 function [Tp,Tr,pull,relax] = analyse_section(t,f,x,T,filename,threshold,plotting)
-
+  % Analyse a section of the file with not too different sampling times
   Tp = [];
   Tr = [];
   pull = [];
@@ -157,6 +162,7 @@ function [Tp,Tr,pull,relax] = analyse_section(t,f,x,T,filename,threshold,plottin
     plot(t(peakpos),f(peakpos),'.k',t(valleypos),f(valleypos),'.k');
   end
 
+  % For debugging: Show peak numbering in plot
   % for i = 1:npeaks
   %   text(t(peakpos(i)),f(peakpos(i))+0.2,num2str(i));
   % end
@@ -164,14 +170,18 @@ function [Tp,Tr,pull,relax] = analyse_section(t,f,x,T,filename,threshold,plottin
 
   peakfirst = valleypos(1)>peakpos(1);
   for i = 1:npeaks-peakfirst
-    s.t = t(valleypos(i):peakpos(i+peakfirst));
-    s.f = f(valleypos(i):peakpos(i+peakfirst));
-    s.x = x(valleypos(i):peakpos(i+peakfirst));
-    s.T = T(valleypos(i):peakpos(i+peakfirst));
+    rng = valleypos(i):peakpos(i+peakfirst);
+    if numel(rng)<50  % not a real trace
+      continue
+    end
+    s.t = t(rng);
+    s.f = f(rng);
+    s.x = x(rng);
+    s.T = T(rng);
     s.pullingspeed = median(diff(s.x)./diff(s.t));
     s.file = filename;
     s = singlerip_finder(s,par_single);
-    % Rips with very low deltax are not likely to be real
+    % Rips with very low deltax are not likely to be real:
     if ~isempty(s.force) && s.deltax > 5
       if plotting
         plot(s.time,s.force,'*r');
@@ -181,15 +191,20 @@ function [Tp,Tr,pull,relax] = analyse_section(t,f,x,T,filename,threshold,plottin
     end
   end
   for i = 1:nvalleys-1
-    r.t = t(peakpos(i):valleypos(i+1-peakfirst));
-    r.f = f(peakpos(i):valleypos(i+1-peakfirst));
-    r.x = x(peakpos(i):valleypos(i+1-peakfirst));
-    r.T = T(peakpos(i):valleypos(i+1-peakfirst));
+    rng = peakpos(i):valleypos(i+1-peakfirst);
+    if numel(rng)<50
+      continue  % not a real trace
+    end
+    r.t = t(rng);
+    r.f = f(rng);
+    r.x = x(rng);
+    r.T = T(rng);
     r.pullingspeed = abs(median(diff(r.x)./diff(r.t)));
     r.file = filename;
     r = singlerip_finder(r,par_single);
     r.file = filename;
-    if ~isempty(r.force) && r.force < f(peakpos(i))*0.33 && r.deltax < -2
+    % plot(r.t,r.f,'r')
+    if ~isempty(r.force) && r.force < f(peakpos(i))*0.5 && r.deltax < -2
       if plotting
         plot(r.time,r.force,'ok',MarkerFaceColor='w');
       end
@@ -197,3 +212,4 @@ function [Tp,Tr,pull,relax] = analyse_section(t,f,x,T,filename,threshold,plottin
       Tr = [Tr;create_table(r)];
     end 
   end
+end
