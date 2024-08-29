@@ -178,9 +178,11 @@ function [Tp,Tr,pull,relax] = analyse_section(t,f,x,T,filename,threshold,plottin
     s.f = f(rng);
     s.x = x(rng);
     s.T = T(rng);
-    s.pullingspeed = median(diff(s.x)./diff(s.t));
     s.file = filename;
     s = singlerip_finder(s,par_single);
+    % Important to calculate pullingspeed after singlerip_finder has
+    % renoved bad (e.g. flat) parts of trace
+    s.pullingspeed = median(diff(s.x)./diff(s.t));
     % Rips with very low deltax are not likely to be real:
     if ~isempty(s.force) && s.deltax > 5
       if plotting
@@ -199,9 +201,11 @@ function [Tp,Tr,pull,relax] = analyse_section(t,f,x,T,filename,threshold,plottin
     r.f = f(rng);
     r.x = x(rng);
     r.T = T(rng);
-    r.pullingspeed = abs(median(diff(r.x)./diff(r.t)));
     r.file = filename;
     r = singlerip_finder(r,par_single);
+    % Important to calculate pullingspeed after singlerip_finder has
+    % renoved bad (e.g. flat) parts of trace
+    r.pullingspeed = abs(median(diff(r.x)./diff(r.t)));
     r.file = filename;
     % plot(r.t,r.f,'r')
     if ~isempty(r.force) && r.force < f(peakpos(i))*0.5 && r.deltax < -2
