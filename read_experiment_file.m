@@ -1,8 +1,9 @@
-function [t,f,x,T,shortname] = read_experiment_file(filename,detrend_x) 
+function [t,f,x,T,shortname] = read_experiment_file(filename,Tlist,detrend_x) 
 % Reads a text file from molecular tweezers protein streching experient
 %   Either: Pre-processed file with three columns (e.g. from CleanData app)
 %   or original file from Tweezers software.
 % Input: filename - including full path if not in Matlab's search path
+%        Tlist: Table specifying extra heating from the status column
 %        detrend_x - 1: detrending of x, 0: no detrending  (default: 1)
 % Output:
 %    t   : Time (s) 
@@ -17,8 +18,11 @@ function [t,f,x,T,shortname] = read_experiment_file(filename,detrend_x)
 % Simplified version 2024-01-20
 % Version 2024-03-31: skip initial lines with negative diff(t)
 
-  if nargin < 2
+  if nargin < 3
     detrend_x = 1;  % Detrending of x is default
+  end
+  if nargin < 2
+    Tlist = NaN;
   end
   d = dir(filename);
   if isempty(d)  % File not found in current path
@@ -39,8 +43,6 @@ function [t,f,x,T,shortname] = read_experiment_file(filename,detrend_x)
   warning('on','MATLAB:table:ModifiedAndSavedVarnames');
 
   data = rmmissing(data);  % Remove rows with NaNs
-  % Temperature 
-  Tbath = T_from_COM(shortname); % Temperature outside cell
 
 %% Brief file format
   if width(data) == 3   
@@ -88,10 +90,29 @@ function [t,f,x,T,shortname] = read_experiment_file(filename,detrend_x)
   f = -data.Y_force(start:end);
   xA = data.A_dist_Y(start:end);
   xB = data.B_dist_Y(start:end);
+  status = data.Status(start:end);  
   x = mean([xA,xB],2);
   if detrend_x
     x = detrend(x); 
   end
-  T = Tbath*ones(size(t));
-  % Disregard any extra heating!!
+
+  % *** Temperature  ***
+  % Read bath temperature from COM file.
+  Tbath = T_from_COM(shortname); % Temperature outside cell
+ 
+  if ~isnan(Tlist)
+    % Read heater setting from digits 2 and 3 in the status column 
+    heater_setting = floor(rem(status,1000)/10);  % Number from digits 2 and 3
+    heater_setting(status<1000) = NaN; 
+    if isscalar(Tlist)						   
+      T = Tlist*ones(size(heater_setting)); % Fixed T specified
+    else
+      T = ones(size(status))*Tbath;
+      for ii = 1:size(Tlist,2)
+        ix = heater_setting==Tlist(1,ii);
+        T(ix) = T(ix) + Tlist(2,ii);				   
+      end
+    end
+  end    
+
 end

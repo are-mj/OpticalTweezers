@@ -1,4 +1,4 @@
-function [pfx_a,pfx_b,pft_a,pft_b,fdot,fstep,weight] = singlerip_finder_fit(s,rip_index,par)
+function [pfx_a,pfx_b,pft_a,pft_b,fdot,fstep,weight,noise] = singlerip_finder_fit(s,rip_index,par)
 % Fit linear polynomials to f(x) before and after rips or zips
 % Returns data for potentital rips.
 % Input: s: stretching or relaxing trace with experiment results:
@@ -14,7 +14,7 @@ function [pfx_a,pfx_b,pft_a,pft_b,fdot,fstep,weight] = singlerip_finder_fit(s,ri
 
 
   if nargin < 3
-    par = par_single;
+    par = parameter_struct;
   end
 
   f = s.f;
@@ -86,7 +86,7 @@ function [pfx_a,pfx_b,pft_a,pft_b,fdot,fstep,weight] = singlerip_finder_fit(s,ri
 
   % Skip events if fstep < noise*par.noisefactors
   noisefactor = (sgn>0) * par.noisefactor(1) + (sgn<0) *par.noisefactor(2);
-  ok = sgn*fstep >= max(par.min_fstep,noisefactor*noise);
+  ok = sgn*fstep >= max(par.min_fstep,noisefactor*noise) & pft_b(:,1).*pft_a(:,1)>0;
   % big changes in slope before and after a rip often yields too high fstep
   % Create a weight to couteract this:
   if any(ok)

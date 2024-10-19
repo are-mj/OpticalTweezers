@@ -42,6 +42,7 @@ function s = singlerip_finder(s,par)
   s.pfx_a = [];  
   s.dt    = [];
   s.temperature = [];
+  s.noise = [];
 
 
   sgn = sign(s.f(end)-s.f(1));  % +1 for pull, -1 for relax
@@ -121,8 +122,11 @@ function s = lookforrip(s,sgn,par)
   rip_index = sort(rip_index(order(1:n_rips)));
   
   % Repeat fitting after invalid rips are removed:
-  [s.pfx_a,s.pfx_b,~,~,fdot,fstep,weight]= singlerip_finder_fit(s,rip_index,par);
+  [s.pfx_a,s.pfx_b,~,~,fdot,fstep,weight,noise]= singlerip_finder_fit(s,rip_index,par);
   [~,best] = max(fstep.*weight);
+  if weight == 0
+    return
+  end
 
   % Search for largest diff(f) near best rip_index
   searchstart = max(rip_index(best)-2*par.supportlength,1);
@@ -132,7 +136,7 @@ function s = lookforrip(s,sgn,par)
 
   if sgn*fstep >= par.min_fstep
     s.ripx = x(rippos);
-    % The force is found aby linear interpolation at s.ripx
+    % The force is found by linear interpolation at s.ripx
     s.force = polyval(s.pfx_b(best,:),s.ripx);
     xend = (s.force-s.pfx_a(best,2))/s.pfx_a(best,1);
     s.deltax = xend - s.ripx;
@@ -147,5 +151,6 @@ function s = lookforrip(s,sgn,par)
     s.pfx_a = s.pfx_a(best,:);
     s.dt = mean(diff(s.t));
 	  s.temperature = s.T(best);
+    s.noise = noise(best);
   end
 end

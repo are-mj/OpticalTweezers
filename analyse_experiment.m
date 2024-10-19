@@ -1,9 +1,23 @@
+function [Tp,Tr,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(file,par,plotting)
+% Find rips and zips data in protein stretching experiemnt records
+% Input:
+%   file:     data file from optical tweezer instrument
+%   par:      parameter struct.  Default: parameter_struct
+%   plotting: 1 for force vs time plot.  Default: no plot
+%  Output:
+%  Tp, Tr:      Matlab tables of properties of rips (Tp) and zips (Tr)
+%  pull, relax: struct arrays with detailed data for pulling and relax
+%               traces with an identified rip or zip
+%  t,f,x,T:     arrays of time, force, trap position and temperature for
+%               complete file
+%  peaks, valleys: record index for force peaks and valleys, separating
+%               individual traces
 
-function [Tp,Tr,pull,relax,t,f,x] = analyse_experiment(file,plotting)
-% Find rips and zip data in experiment file
-
-  if nargin < 2
+  if nargin < 3
     plotting = 0;
+  end
+  if nargin < 2
+    par = parameter_struct;
   end
   % Allow file name containing full path
   if ischar(file)
@@ -14,138 +28,30 @@ function [Tp,Tr,pull,relax,t,f,x] = analyse_experiment(file,plotting)
     % datafolder = "Clean_files";  % OK for Karina files.  Generalize!!
     filename = fullfile(datafolder,file);
   end
-  [t,f,x,T] = read_experiment_file(filename);
+  Tlist = NaN;
+  if isfield(par,'Tlist')
+    Tlist = par.Tlist;
+  end
+  [t,f,x,T] = read_experiment_file(filename,Tlist);
   
   % Eliminate obviously faulty records
   bad = isnan(x) | isnan(f) | isnan(t);
   f(bad) = []; x(bad)=[]; t(bad) = [];
   [t,f,x,T] = remove_time_loops(t,f,x,T);
-  
-  % Make sure no f value == threshold:
-  threshold = mean(f);
-  exact_hit = f==threshold;
-  f(exact_hit) = f(exact_hit)*(1+5*eps);  
 
   if plotting
       clf;
       plot(t,f);
       hold on;
   end
-
-  % Analyse sections similar (order of magnitude) sampline times: 
-
-  % Create array of sampling time orders of magnitude:
-  % dtmag0 = round(log10(diff(t)));
-  % Smooth out brief periods of aberrant smoing times
-  % Find borders for sections with identical smoothed orders of madnitude 
-  % section_borders = rle_smooth(dtmag0,5);
-  section_borders = frequency_split(t,f);
-
-  Tp = [];
-  Tr = [];
-  pull = [];
-  relax = [];
-  for k = 2:numel(section_borders)
-    range = section_borders(k-1):section_borders(k);
-    tt = t(range);
-    ff = f(range);
-    xx = x(range);
-    TT = T(range);
-    
-    [Tp_,Tr_,pull_,relax_] = analyse_section(tt,ff,xx,TT,filename,threshold,plotting);
-    Tp = [Tp;Tp_];
-    Tr = [Tr;Tr_];
-    pull = [pull;pull_];
-    relax = [relax;relax_];
-    if plotting
-      xlabel('Time (s)');
-      ylabel('Force (pN)')
-      title(file)
-    end
+  if plotting
+    xlabel('Time (s)');
+    ylabel('Force (pN)')
+    title(file,'interpreter','none');
   end
-end
 
-function [Tp,Tr,pull,relax] = analyse_section(t,f,x,T,filename,threshold,plotting)
-  % Analyse a section of the file with not too different sampling times
-  Tp = [];
-  Tr = [];
-  pull = [];
-  relax = [];
+  [peakpos,valleypos] = peaksandvalleys(f,par.threshold,par.lim,0);
   
-  % Find all points where f crosses the thresold value:
-  up = find(f(2:end)-threshold>0 & f(1:end-1)-threshold<0);
-  down = find(f(2:end)-threshold<0 & f(1:end-1)-threshold>0);
- 
-  nup = numel(up);
-  ndown = numel(down);
-  if nup > 0
-    upfirst = up(1)<down(1); 
-  end
-  upmax = min(nup,ndown);
-  downmax = min(ndown,nup);
-  if upmax+downmax <1
-    return
-  end
-
-  % Eliminate close crossings due to noise
-  if upfirst
-    k = find(down(1:downmax)-up(1:upmax) < max(down(1:downmax)-up(1:upmax))/10);
-    if ~isempty(k)
-      up(k) = [];
-      down(k) = [];
-    end
-  else
-    k = find(up(1:upmax)-down(1:downmax) < max(up(1:upmax)-down(1:downmax))/10);
-    if ~isempty(k)
-      up(k) = [];
-      down(k) = [];
-    end
-  end
-
-  % Redefine nup and ndown, without noise-relat3ed crossings
-  nup = numel(up);
-  ndown = numel(down);
-  upfirst = up(1)<down(1);
-  uplast = up(end)>down(end);
-  downlast = ~uplast;
-
-  % Find valleys and peaks:
-  peakpos = [];
-  valleypos = [];
-  if upfirst
-    % Denote the lowest point between 1 and up(1) as a valley pooint
-    [~,m] = min(f(1:up(1)));
-    valleypos = m;    
-    for i = 1:ndown
-      [~,m] = max(f(up(i):down(i+1-upfirst)));
-      peakpos = [peakpos;up(i)+m-1]; 
-    end
-    for i = 1:nup-1
-      [~,m] = min(f(down(i):up(i+1)));
-      valleypos = [valleypos;down(i)+m-1];
-    end
-  else
-    % denote the highest point beween 1 and down(1) as  a peak point
-    [~,m] = max(f(1:down(1)));
-    peakpos = m;
-    for i = 1:ndown-downlast
-      [~,m] = min(f(down(i):up(i)));
-      valleypos = [valleypos;down(i)+m-1]; 
-    end    
-    for i = 1:nup-uplast
-      [~,m] = max(f(up(i):down(i+1)));
-      peakpos = [peakpos;up(i)+m-1];
-    end  
-  end
-  % Denote last extremum point as peak or valley:
-  if uplast
-    [~,m]=max(f(up(end):end));
-    peakpos = [peakpos;up(end)+m-1];
-  elseif downlast
-    [~,m]=min(f(down(end):end));
-    valleypos = [valleypos;down(end)+m-1];    
-  end
-
   % analyse all traces for rips/zips
   npeaks = numel(peakpos);
   nvalleys = numel(valleypos);
@@ -153,7 +59,14 @@ function [Tp,Tr,pull,relax] = analyse_section(t,f,x,T,filename,threshold,plottin
   if (f(peakpos(1))-f(valleypos(1)))*(x(peakpos(1))-x(valleypos(1))) < 0
     x = max(x)-x;   % So f and x have same phase
   end
-  
+  % Remove drift in x by forcing x=0 at valleys
+  x(1:valleypos(1))=x(1:valleypos(1))-x(valleypos(1));
+  for i = 2:numel(valleypos)
+    rng = valleypos(i-1):valleypos(i);
+    p = polyfit([rng(1),rng(end)],x([rng(1),rng(end)]),1);  
+    x(rng(1:end-1)) = x(rng(1:end-1))-polyval(p,rng(1:end-1))';
+  end  
+
   pull = [];  % Array of pulling trace structs
   relax = []; % Array of relaxing trace structs
   Tp = [];    % Pulling results table
@@ -167,7 +80,6 @@ function [Tp,Tr,pull,relax] = analyse_section(t,f,x,T,filename,threshold,plottin
   %   text(t(peakpos(i)),f(peakpos(i))+0.2,num2str(i));
   % end
 
-
   peakfirst = valleypos(1)>peakpos(1);
   for i = 1:npeaks-peakfirst
     rng = valleypos(i):peakpos(i+peakfirst);
@@ -179,9 +91,7 @@ function [Tp,Tr,pull,relax] = analyse_section(t,f,x,T,filename,threshold,plottin
     s.x = x(rng);
     s.T = T(rng);
     s.file = filename;
-    s = singlerip_finder(s,par_single);
-    % Important to calculate pullingspeed after singlerip_finder has
-    % renoved bad (e.g. flat) parts of trace
+    s = singlerip_finder(s,par);
     s.pullingspeed = median(diff(s.x)./diff(s.t));
     % Rips with very low deltax are not likely to be real:
     if ~isempty(s.force) && s.deltax > 5
@@ -202,9 +112,7 @@ function [Tp,Tr,pull,relax] = analyse_section(t,f,x,T,filename,threshold,plottin
     r.x = x(rng);
     r.T = T(rng);
     r.file = filename;
-    r = singlerip_finder(r,par_single);
-    % Important to calculate pullingspeed after singlerip_finder has
-    % renoved bad (e.g. flat) parts of trace
+    r = singlerip_finder(r,par);
     r.pullingspeed = abs(median(diff(r.x)./diff(r.t)));
     r.file = filename;
     % plot(r.t,r.f,'r')

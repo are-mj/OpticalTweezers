@@ -15,9 +15,10 @@ TP = [];
 TR = [];
 for i = 1:numel(files)
   if plotting
-    figure;
+    figure(i);
+    clf;
   end
-  [Tp,Tr] = analyse_experiment(files(i),plotting);
+  [Tp,Tr] = analyse_experiment(files(i),parameter_struct,plotting);
   TP =[TP;Tp];
   TR = [TR;Tr];
   fprintf('Rips: %4d, Zips: %4d Filename: %s\n',height(Tp),height(Tr),files(i));

@@ -15,7 +15,8 @@ function T = create_table(st)
   Pullingspeed = vertcat(st.pullingspeed); % Not implemented (yet)
   Temperature = vertcat(st.temperature);
   Timestep = vertcat(st.dt);
+  Noise = vertcat(st.noise);
   % Lineno = vertcat(st.lineno);
   T = table(Filename,Time,Deltax,Force,Temperature,Forceshift,Trapx,...
-          Fdot,Slope,Pullingspeed,Timestep);
+          Fdot,Slope,Pullingspeed,Noise,Timestep);
 end
