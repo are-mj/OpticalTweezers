@@ -19,10 +19,10 @@ function par = parameter_struct
                            % [rip,zip]   
 % Extra heating table. 
 % Row 1: heater setting, from digits 2 and 3 in status column.
-% Row 2: Corresponding teperature rise over mean COM file value
+% Row 2: Corresponding temperature rise over mean COM file value
   % par.Tlist = [0 2 4 6 8 10 14 12 16 20 24 31; ...
   % 0 3.07 6.96 10.78 13.75 16.92 20.14 22.92 25.10 28.01 30.77 34.83];
-% Temporary change to handle IR laser (09=
+% Ad-hoc change to handle IR laser (09=
   par.Tlist = [0 2 4 6 8 9 10 14 12 16 20 24 31; ...
   0 3.07 6.96 10.78 13.75 -100 16.92 20.14 22.92 25.10 28.01 30.77 34.83];
 end
