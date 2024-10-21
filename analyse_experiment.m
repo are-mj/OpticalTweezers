@@ -20,13 +20,13 @@ function [Tp,Tr,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(file,
     par = parameter_struct;
   end
   % Allow file name containing full path
-  if ischar(file)
-    if strcmp(file(1:3),'C:\') | strcmp(file(1:3),'C:/') % Full path
-      filename = string(file);
-    end
+  if isfile(file)
+    filename = file;
   else
-    % datafolder = "Clean_files";  % OK for Karina files.  Generalize!!
     filename = fullfile(datafolder,file);
+    if ~isfile(filename)
+      error(sprintf("File %s is not found",filename));e
+    end
   end
   Tlist = NaN;
   if isfield(par,'Tlist')
