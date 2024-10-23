@@ -99,6 +99,7 @@ function [t,f,x,T,shortname] = read_experiment_file(filename,Tlist,detrend_x)
   % *** Temperature  ***
   % Read bath temperature from COM file.
   Tbath = T_from_COM(shortname); % Temperature outside cell
+  T = ones(size(status))*Tbath;
  
   if ~isnan(Tlist)
     % Read heater setting from digits 2 and 3 in the status column 
@@ -107,7 +108,6 @@ function [t,f,x,T,shortname] = read_experiment_file(filename,Tlist,detrend_x)
     if isscalar(Tlist)						   
       T = Tlist*ones(size(heater_setting)); % Fixed T specified
     else
-      T = ones(size(status))*Tbath;
       for ii = 1:size(Tlist,2)
         ix = heater_setting==Tlist(1,ii);
         T(ix) = T(ix) + Tlist(2,ii);				   
