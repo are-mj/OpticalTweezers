@@ -10,8 +10,8 @@ function [Tp,Tr,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(file,
 %               traces with an identified rip or zip
 %  t,f,x,T:     arrays of time, force, trap position and temperature for
 %               complete file
-%  peaks, valleys: record index for force peaks and valleys, separating
-%               individual traces
+%  peakpos:     record index for force peaks 
+%  valleypos:   record indicee fr force valleys
 
   if nargin < 3
     plotting = 0;
@@ -25,7 +25,7 @@ function [Tp,Tr,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(file,
   else
     filename = fullfile(datafolder,file);
     if ~isfile(filename)
-      error(sprintf("File %s is not found",filename));
+      error("File %s is not found",filename);
     end
   end
   Tlist = NaN;
@@ -40,11 +40,9 @@ function [Tp,Tr,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(file,
   [t,f,x,T] = remove_time_loops(t,f,x,T);
 
   if plotting
-      clf;
-      plot(t,f);
-      hold on;
-  end
-  if plotting
+    clf;
+    plot(t,f);
+    hold on;
     xlabel('Time (s)');
     ylabel('Force (pN)')
     title(file,'interpreter','none');
@@ -55,20 +53,9 @@ function [Tp,Tr,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(file,
   % analyse all traces for rips/zips
   npeaks = numel(peakpos);
   nvalleys = numel(valleypos);
-
-  % Check if f and x have the same phase
-  % if (f(peakpos(1))-f(valleypos(1)))*(x(peakpos(1))-x(valleypos(1))) < 0
-  %   x = max(x)-x;   % So f and x have same phase
-  % end  
-  % NOT ROBUST in a few cases. Use correation coefficient instead:
-  X = corrcoef(f,x);
-  if X(2,1) < 0   % x and f have opposide phase
-    x = max(x)-x;
-  end
-
-
+ 
   % Remove drift in x by forcing x=0 at valleys
-  x(1:valleypos(1))=x(1:valleypos(1))-x(valleypos(1));
+  x(1:valleypos(1)) = x(1:valleypos(1))-x(valleypos(1));
   for i = 2:numel(valleypos)
     rng = valleypos(i-1):valleypos(i);
     p = polyfit([rng(1),rng(end)],x([rng(1),rng(end)]),1);  
@@ -82,11 +69,6 @@ function [Tp,Tr,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(file,
   if plotting
     plot(t(peakpos),f(peakpos),'.k',t(valleypos),f(valleypos),'.k');
   end
-
-  % For debugging: Show peak numbering in plot
-  % for i = 1:npeaks
-  %   text(t(peakpos(i)),f(peakpos(i))+0.2,num2str(i));
-  % end
 
   peakfirst = valleypos(1)>peakpos(1);
   for i = 1:npeaks-peakfirst
@@ -123,7 +105,6 @@ function [Tp,Tr,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(file,
     r = singlerip_finder(r,par);
     r.pullingspeed = abs(median(diff(r.x)./diff(r.t)));
     r.file = filename;
-    % plot(r.t,r.f,'r')
     if ~isempty(r.force) && r.force < f(peakpos(i))*0.5 && r.deltax < -2
       if plotting
         plot(r.time,r.force,'ok',MarkerFaceColor='w');
