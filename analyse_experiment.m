@@ -25,7 +25,7 @@ function [Tp,Tr,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(file,
   else
     filename = fullfile(datafolder,file);
     if ~isfile(filename)
-      error(sprintf("File %s is not found",filename));e
+      error(sprintf("File %s is not found",filename));
     end
   end
   Tlist = NaN;
@@ -56,9 +56,17 @@ function [Tp,Tr,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(file,
   npeaks = numel(peakpos);
   nvalleys = numel(valleypos);
 
-  if (f(peakpos(1))-f(valleypos(1)))*(x(peakpos(1))-x(valleypos(1))) < 0
-    x = max(x)-x;   % So f and x have same phase
+  % Check if f and x have the same phase
+  % if (f(peakpos(1))-f(valleypos(1)))*(x(peakpos(1))-x(valleypos(1))) < 0
+  %   x = max(x)-x;   % So f and x have same phase
+  % end  
+  % NOT ROBUST in a few cases. Use correation coefficient instead:
+  X = corrcoef(f,x);
+  if X(2,1) < 0   % x and f have opposide phase
+    x = max(x)-x;
   end
+
+
   % Remove drift in x by forcing x=0 at valleys
   x(1:valleypos(1))=x(1:valleypos(1))-x(valleypos(1));
   for i = 2:numel(valleypos)
