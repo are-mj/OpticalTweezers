@@ -79,6 +79,7 @@ function [t,f,x,T,shortname] = read_experiment_file(filename,Tlist,detrend_x)
   if numel(t) < 10
     f = [];
     x = [];
+    T = [];
     return
   end
   start = 1;
