@@ -2,8 +2,8 @@ function par = parameter_struct
 % parameters used by analyse_experiment.m  
 
 % Parameters for separating out individual traces:
-  par.threshold = 20; % (pN) Crossing this value defines high and low force periods
-  par.lim = 30; % (pN) High force periods that stays below this value are regarded as noise
+  par.threshold = 15; % (pN) Crossing this value defines high and low force periods
+  par.lim = 20; % (pN) High force periods that stays below this value are regarded as noise
 
 % Parameters for rip:finder:
   % Minimum and maximum fractions of trace length to be used for fitting
