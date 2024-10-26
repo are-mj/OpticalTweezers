@@ -18,6 +18,13 @@ function [t,f,x,T,shortname] = read_experiment_file(filename,Tlist,detrend_x)
 % Simplified version 2024-01-20
 % Version 2024-03-31: skip initial lines with negative diff(t)
 
+  % Make sure all outputs are defined
+  t = [];
+  f = [];
+  x = [];
+  T = [];
+  shortname = [];
+
   if nargin < 3
     detrend_x = 1;  % Detrending of x is default
   end
@@ -68,18 +75,10 @@ function [t,f,x,T,shortname] = read_experiment_file(filename,Tlist,detrend_x)
     countscol = contains(data.Properties.VariableNames,'CycleCount');
     if any(countscol)
       t = data.CycleCount/cps;
-    else
-      t = [];
-      f = [];
-      x = [];
-      return
     end    
   end
 
   if numel(t) < 10
-    f = [];
-    x = [];
-    T = [];
     return
   end
   start = 1;
