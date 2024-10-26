@@ -3,32 +3,32 @@ function s = singlerip_finder(s,par)
 % pulling or relaxing trace. Returns the the input struct with 
 % additinal fields specifying details for the event
 % Inputs;:
-%   s:  input structanaanaanaana with fields:
-%     x: extent (trap position)
-%     f: force 
-%     t: time
+%   s: input trace struct with fields:
+%   x: extent (trap position)
+%   f: force 
+%   t: time
 % Output
-%   s: output struct with fields:
-%     x: extent (trap position)
-%     f: force 
-%     t: time
-%     force:      % pulling force at rip/zip start
-%     deltax:     % rip/zip extent
-%     ripx:       % event x value
-%     fdot:       % rate of change of f before event
-%     slope       % mean df/dx before event
-%     fstep       % force shift
-%     rip_index   % rows of rips/zips in t,x,f arrays
-%     pfx_b       % Linear fit to f(x) before rips/zips
-%     pfx_a       % Linear fit to f(x) after rips/zips
+%   s: output trace struct with fields:
+%   x: extent (trap position)
+%   f: force 
+%   t: time
+%   force:      % pulling force at rip/zip start
+%   deltax:     % rip/zip extent
+%   ripx:       % event x value
+%   fdot:       % rate of change of f before event
+%   slope       % mean df/dx before event
+%   fstep       % force shift
+%   rip_index   % rows of rips/zips in t,x,f arrays
+%   pfx_b       % Linear fit to f(x) before rips/zips
+%   pfx_a       % Linear fit to f(x) after rips/zips
 
 % Author: Are Mjaavatten
 % Version: 0.1  2023-11-13 Handles both pulling and relaxing traces
-%     Better handling of short sequnces (mean(a*x-f)
+%   Better handling of short sequnces (mean(a*x-f)
 % Version 0.2 2024_01_21: Moved polynomial fitting to subfunction 
-%     rip_finder_fit and repeated fitting after pruning rip candidates
+%   rip_finder_fit and repeated fitting after pruning rip candidates
 % Version 0.5 2024_08_26 Use valid_trace_part to eliminate irrelevant parts
-%      of the trace. Added sampling time step dt to trace struct
+%    of the trace. Added sampling time step dt to trace struct
 
   s.force = []; 
   s.deltax = [];

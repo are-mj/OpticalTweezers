@@ -88,7 +88,7 @@ function [pfx_a,pfx_b,pft_a,pft_b,fdot,fstep,weight,noise] = singlerip_finder_fi
   noisefactor = (sgn>0) * par.noisefactor(1) + (sgn<0) *par.noisefactor(2);
   ok = sgn*fstep >= max(par.min_fstep,noisefactor*noise) & pft_b(:,1).*pft_a(:,1)>0;
   % big changes in slope before and after a rip often yields too high fstep
-  % Create a weight to couteract this:
+  % Create a weight to counteract this:
   if any(ok)
     % weight = sqrt(nanmin(slopediff(ok))./slopediff);  
     weight = 1./(abs(log(pft_b(:,1)./pft_a(:,1)))+0.5);
