@@ -4,24 +4,21 @@ function T = T_from_COM(file)
 %   2023-10-16: Modified the construction of COM file name.  Now works for
 %   abA.txt (but no longer for aAB.txt)
 %   2023-12-07: Read only TemperatureB (as recommended by Steve B. Smith)
-  file = char(file);
-  slashes = regexp(file,'[\/\\]');
-  if numel(slashes)<2  % Short version of filename
-    file_full = char(fullfile(datafolder,file));  % datafolder.m must return the folder
-    file_full = strrep(file_full,'\','/');
-    slashes = regexp(file_full,'[\/\\]'); 
+%   2024-10-29: Made extracting fiber name from file name more robust
+%               'file' must include full path
+  
+  % Extract fiber name from file name
+  [path,name,ext] = fileparts(file);
+  name = char(name);  % To allow accessing individual characters 
+  corename = name(isstrprop(name,'alpha'));
+  if length(corename) >= 2 && isequal(isstrprop(corename(1:2),'lower'),[1 0]) % aBxxx
+    fiber = corename(1);
+  elseif length(corename) >= 3 && isequal(isstrprop(corename(1:3),'lower'),[1 1 0]) % abCxxx
+    fiber = corename(1:2);
   else
-    file_full = file;
+    error('Unable to extract fiber name from %s',name);
   end
-  strrep(file_full,'\','/');
-  
-  fiber = file_full(slashes(end)+1:end-5);
-  underscore_pos = regexp(fiber,'_');
-  if ~isempty(underscore_pos)
-    fiber(underscore_pos-1:end) = [];  % handle files like  "20230821/eA_10°.txt"
-  end
-  
-  COMfile = [file_full(1:slashes(end)),fiber,'COM.txt'];
+  COMfile = fullfile(path,strcat(fiber,'COM.txt'));
   
   fid = fopen(COMfile);
   if fid == -1
