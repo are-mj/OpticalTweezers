@@ -1,4 +1,4 @@
-function [t,f,x,T,shortname] = read_experiment_file(filename,Tlist,detrend_x) 
+function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x) 
 % Reads a text file from molecular tweezers protein streching experient
 %   Either: Pre-processed file with three columns (e.g. from CleanData app)
 %   or original file from Tweezers software.
@@ -9,7 +9,7 @@ function [t,f,x,T,shortname] = read_experiment_file(filename,Tlist,detrend_x)
 %    t   : Time (s) 
 %    f   : Force (pN)
 %    x   : Trap position (mean of two coluns A_dist_y and B_dist)
-%    shortname: file name without path. Form: 'xx.txt' or '<subfolder>/xX.txt'
+%
 % Depending on the file format, time is read from Time column in file or 
 %  Calculated as CycleCounts*4000;
 
@@ -17,6 +17,7 @@ function [t,f,x,T,shortname] = read_experiment_file(filename,Tlist,detrend_x)
 % Version 2023-12-02: Switched to using readtable
 % Simplified version 2024-01-20
 % Version 2024-03-31: skip initial lines with negative diff(t)
+% Vesion 2024-10-29: supplies datafolder to file if needed
 
   % Make sure all outputs are defined
   t = [];
@@ -31,19 +32,24 @@ function [t,f,x,T,shortname] = read_experiment_file(filename,Tlist,detrend_x)
   if nargin < 2
     Tlist = NaN;
   end
-  d = dir(filename);
-  if isempty(d)  % File not found in current path
-    error('File not found');
-  end
-  filename = strrep(filename,'\','/');  % Use Unix separator
-  filename_slashes = regexp(filename,'\/');  % Position of '/' in files
-  fn = char(filename);  % Translate to character array
-  if numel(filename_slashes) < 2
-    shortname = fn;  % form: 'xx.txt' or '<subfolder>/xX.txt'
+  % Allow file name containing full path
+  if isfile(file)
+    filename = file;
   else
-    shortname = fn(filename_slashes(end-1)+1:end); % '<subfolder>/xX.txt'
-  end
-  shortname = string(shortname);  % Convert back to string
+    filename = fullfile(datafolder,file);
+    if ~isfile(filename)
+      error("File %p is not found",filename);
+    end
+  end  
+  filename = strrep(filename,'\','/');  % Use Unix separator
+  % filename_slashes = regexp(filename,'\/');  % Position of '/' in files
+  % fn = char(filename);  % Translate to character array
+  % if numel(filename_slashes) < 2
+  %   shortname = fn;  % form: 'xx.txt' or '<subfolder>/xX.txt'
+  % else
+  %   shortname = fn(filename_slashes(end-1)+1:end); % '<subfolder>/xX.txt'
+  % end
+  % shortname = string(shortname);  % Convert back to string
 
   warning('off','MATLAB:table:ModifiedAndSavedVarnames');
   data = readtable(filename);
@@ -98,7 +104,7 @@ function [t,f,x,T,shortname] = read_experiment_file(filename,Tlist,detrend_x)
 
   % *** Temperature  ***
   % Read bath temperature from COM file.
-  Tbath = T_from_COM(shortname); % Temperature outside cell
+  Tbath = T_from_COM(filename); % Temperature outside cell
   T = ones(size(status))*Tbath;
  
   if ~isnan(Tlist)
