@@ -12,11 +12,6 @@ function [pfx_a,pfx_b,pft_a,pft_b,fdot,fstep,weight,noise] = singlerip_finder_fi
 %         fdot   (n_rips by 1) Slope of f(t) before rip/zip
 %         fstep  (n_rips by 1) value of pfx_b - pfx_a at rip/zip
 
-
-  if nargin < 3
-    par = parameter_struct;
-  end
-
   f = s.f;
   x = s.x;
   t = s.t;

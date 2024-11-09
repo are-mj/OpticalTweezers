@@ -1,5 +1,7 @@
 function T = create_table(st)
-% Create Matlab results from an array of pull or relax structs
+% Create Matlab results table array of pull or relax structs
+% Input 
+%    st: array of pull or relax structs
   if isempty(st)
     T = [];
     return

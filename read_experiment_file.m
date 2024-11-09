@@ -9,6 +9,7 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
 %    t   : Time (s) 
 %    f   : Force (pN)
 %    x   : Trap position (mean of two coluns A_dist_y and B_dist)
+%    T   : Temperature (°C)
 %
 % Depending on the file format, time is read from Time column in file or 
 %  Calculated as CycleCounts*4000;
@@ -24,7 +25,6 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
   f = [];
   x = [];
   T = [];
-  shortname = [];
 
   if nargin < 3
     detrend_x = 1;  % Detrending of x is default
@@ -42,15 +42,6 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
     end
   end  
   filename = strrep(filename,'\','/');  % Use Unix separator
-  % filename_slashes = regexp(filename,'\/');  % Position of '/' in files
-  % fn = char(filename);  % Translate to character array
-  % if numel(filename_slashes) < 2
-  %   shortname = fn;  % form: 'xx.txt' or '<subfolder>/xX.txt'
-  % else
-  %   shortname = fn(filename_slashes(end-1)+1:end); % '<subfolder>/xX.txt'
-  % end
-  % shortname = string(shortname);  % Convert back to string
-
   warning('off','MATLAB:table:ModifiedAndSavedVarnames');
   data = readtable(filename);
   warning('on','MATLAB:table:ModifiedAndSavedVarnames');
@@ -87,11 +78,12 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
   if numel(t) < 10
     return
   end
-  start = 1;
-  negdt = find(diff(t(1:10))<0);
-  if ~isempty(negdt)
-    start = negdt+1;  % skip any high t values at start
-  end
+  start = 2;  % Skip first record, which seldom makes sense
+  % start = 1;
+  % negdt = find(diff(t(1:10))<0);
+  % if ~isempty(negdt)
+  %   start = negdt+1;  % skip any high t values at start
+  % end
   t = t(start:end);
   f = -data.Y_force(start:end);
   xA = data.A_dist_Y(start:end);

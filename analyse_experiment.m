@@ -1,9 +1,9 @@
-function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(file,par,plotting)
+function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(file,plotting,par)
 % Find rips and zips data in protein stretching experiemnt records
 % Input:
-%   file:     data file from optical tweezer instrument
-%   par:      parameter struct.  Default: parameter_struct
+%   file:     data file from optical tweezer instrument  
 %   plotting: 1 for force vs time plot.  Default: no plot
+%   par:      parameter struct.  Default: params
 %  Output:
 %  Trip, Tzip:  Matlab tables of properties of rips and zips
 %  pull, relax: struct arrays with detailed data for pulling and relax
@@ -13,12 +13,23 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
 %  peakpos:     record index for force peaks 
 %  valleypos:   record indicee fr force valleys
 
+  % Make sure all output variables are defined:
+  Trip = [];
+  Tzip = [];
+  pull = [];
+  relax = [];
+  t = [];
+  f = [];
+  x = [];
+  T = [];
+
   if nargin < 3
-    plotting = 0;
+    par = params;
   end
   if nargin < 2
-    par = parameter_struct;
+    plotting = 0;
   end
+  
   % Allow file name containing full path
   if isfile(file)
     filename = file;
@@ -53,6 +64,9 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
   end
 
   [peakpos,valleypos] = peaksandvalleys(f,par.threshold,par.lim,0);
+  if isempty(peakpos) || isempty(valleypos)
+    return
+  end
   
   % analyse all traces for rips/zips
   npeaks = numel(peakpos);
@@ -107,7 +121,6 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
     r.file = filename;
     r = singlerip_finder(r,par);
     r.pullingspeed = abs(median(diff(r.x)./diff(r.t)));
-    r.file = filename;
     if ~isempty(r.force) && r.force < f(peakpos(i))*0.5 && r.deltax < -2
       relax = [relax;r];
       Tzip = [Tzip;create_table(r)];

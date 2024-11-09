@@ -26,7 +26,7 @@ function h = plot_trace(ax,s,r)
     ax = gca;
   end
 
-  par = parameter_struct;
+  par = params;
   cla(ax);
   hold(ax,'on') 
   % Plot stretching trace:

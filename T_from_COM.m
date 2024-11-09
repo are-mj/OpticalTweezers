@@ -8,15 +8,19 @@ function T = T_from_COM(file)
 %               'file' must include full path
   
   % Extract fiber name from file name
-  [path,name,ext] = fileparts(file);
+  [path,name] = fileparts(file);
   name = char(name);  % To allow accessing individual characters 
   corename = name(isstrprop(name,'alpha'));
-  if length(corename) >= 2 && isequal(isstrprop(corename(1:2),'lower'),[1 0]) % aBxxx
-    fiber = corename(1);
-  elseif length(corename) >= 3 && isequal(isstrprop(corename(1:3),'lower'),[1 1 0]) % abCxxx
+  if length(corename) >= 3 && isequal(isstrprop(corename(1:3),'lower'),[1 1 0]) % abCxxx
     fiber = corename(1:2);
   else
-    error('Unable to extract fiber name from %s',name);
+    fiber = corename(1);
+  % if length(corename) >= 2 && isstrprop(corename(1),'lower'),[1 0]) % aBxxx
+  %   fiber = corename(1);
+  % elseif length(corename) >= 3 && isequal(isstrprop(corename(1:3),'lower'),[1 1 0]) % abCxxx
+  %   fiber = corename(1:2);
+  % else
+  %   error('Unable to extract fiber name from %s',name);
   end
   COMfile = fullfile(path,strcat(fiber,'COM.txt'));
   

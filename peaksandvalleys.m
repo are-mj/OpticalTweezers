@@ -14,6 +14,8 @@ function  [peakpos,valleypos] = peaksandvalleys(f,threshold,lim,plotting)
     plotting = 0;
   end
 
+  peakpos = [];
+  valleypos = [];
   % Make sure no f values exactly match threshold:
   exact_hit = f==threshold;
   f(exact_hit) = f(exact_hit)*(1+5*eps);
@@ -33,9 +35,27 @@ function  [peakpos,valleypos] = peaksandvalleys(f,threshold,lim,plotting)
 
   pfun = @(i,j) peakfun(i,j,f);
   peakpos = arrayfun(pfun,high(:,1),high(:,2));
+  if isempty(peakpos)
+    return
+  end
+
   vfun = @(i,j) valleyfun(i,j,f);
   % valleypos = arrayfun(vfun,[high(1:end-1,2)],[high(2:end,1)]);
   valleypos = arrayfun(vfun,[1;high(:,2)],[high(:,1);nf]);
+  % Delete spurious peaks or valleys at ends:
+  if peakpos(1)<10
+    peakpos(1) = [];
+  end
+  if nf-peakpos(end) < 10
+    peakpos(end) = [];
+  end
+
+  if valleypos(1) < 10
+    valleypos(1) = [];
+  end
+  if nf-valleypos(end) < 10
+    valleypos(end) = [];
+  end
   if plotting
     figure;
     plot(f);

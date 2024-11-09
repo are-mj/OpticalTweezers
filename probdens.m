@@ -1,26 +1,24 @@
-function [pd,F,n] = probdens(force,dF)
+function [pd_obs,edges,n_obs] = probdens(force,dF)
 % Histogram of probability densities from experimennts
-% Similar to probability_density, but:
-%   - uses force vector as input rather that Matlab Table Tun or Tre
-%   - does not return Tmean or Fplot
 % Input:
-%  force:  Array of recorded transition forces
-%  dF:   Force value spacing
+%  force:  Array of recorded rip or zip forces
+%  dF:     Force value spacing
+%  n_obs   Number of rips or zips
 % Output: 
-%  pd: Column vector of probality desities.  The probability of unfolding 
-%      (or refolding) in the interval <F(i)-dF/2,F(i+dF/2)> is pd(i)*dF
-%  n: nUmber of rows in force
-%  F: Force vector (useful if F is not specified in the call)
+%  pd_obs: Column vector of probality densities. 
+%  edges:  Force bin edges. pd_obs(i) is the probability density for unfolding 
+%          (or refolding) in the interval from edges(i) to edges(i+1)
+%          
+%  n_obs:  Number of observed rips or zips
 
   if isempty(force)  % Empty cluster
-    pd = NaN;
-    F = NaN;
-    n = 0;
+    pd_obs = NaN;
+    edges = NaN;
+    n_obs = 0;
     return
   end
-  edges = floor(min(force)-0.5*dF)+0.5*dF:dF:ceil(max(force) + 0.5*dF)-0.5*dF;
-  F = (edges(1:end-1)+edges(2:end))'/2;
+  edges = floor(min(force/dF))*dF:dF:ceil(max(force/dF))*dF;
   Values = histcounts(force,edges);
-  n = sum(Values);
-  pd = Values'/n/dF;  % Probability density
+  n_obs = sum(Values);
+  pd_obs = Values'/n_obs/dF;  % Probability density
 end
