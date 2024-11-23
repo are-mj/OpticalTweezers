@@ -55,7 +55,7 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
   [t,f,x,T] = remove_time_loops(t,f,x,T);
 
   if plotting
-    clf;
+    figure;
     plot(t,f);
     hold on;
     xlabel('Time (s)');
@@ -121,7 +121,8 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
     r.file = filename;
     r = singlerip_finder(r,par);
     r.pullingspeed = abs(median(diff(r.x)./diff(r.t)));
-    if ~isempty(r.force) && r.force < f(peakpos(i))*0.5 && r.deltax < -2
+    if ~isempty(r.force) && r.force < f(peakpos(i))*par.maxzipfactor ...
+        && r.deltax < -2
       relax = [relax;r];
       Tzip = [Tzip;create_table(r)];
     end 
