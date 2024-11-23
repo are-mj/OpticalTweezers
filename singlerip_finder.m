@@ -150,7 +150,9 @@ function s = lookforrip(s,sgn,par)
     s.pfx_b = s.pfx_b(best,:);
     s.pfx_a = s.pfx_a(best,:);
     s.dt = mean(diff(s.t));
-	  s.temperature = s.T(best);
+    if isfield(s,'T')
+	    s.temperature = s.T(best);
+    end
     s.noise = noise(best);
   end
 end
