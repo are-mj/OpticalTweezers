@@ -2,9 +2,8 @@ function par = params
 % parameters used by analyse_experiment.m  
 
 % Parameters for separating out individual traces:
-  par.threshold = 15; % (pN) Crossing this value defines high and low force periods
-  par.lim = 20; % (pN) High force periods that stays below this value are regarded as noise
-
+  par.threshold = 12; % (pN) Crossing this value defines high and low force periods
+  par.lim = 16; % (pN) High force periods that stays below this value are regarded as noise
 % Parameters for rip_finder:
   % Minimum and maximum fractions of trace length to be used for fitting
   % straight lines bedore and after a rip/zip
@@ -17,6 +16,9 @@ function par = params
   par.overstretch = 55;  % Maximum rip/zip force (probably overstretch)
   par.noisefactor = [3,1]; % Skip rips/zips if fstep/noise < par.noisefactor
                            % [rip,zip]   
+  par.maxzipfactor = 0.65; % Discard zips that occur at a higher force than
+                           % par.maxzipfactor*max(force for the current
+                           % trace)
 % Extra heating table. 
 % Row 1: heater setting, from digits 2 and 3 in status column.
 % Row 2: Corresponding temperature rise over mean COM file value
