@@ -3,24 +3,7 @@ function [TRIP,TZIP] = analyse_many(files,plotting,par)
 % Input:
 %   files: list of file names.  
 %          Either:  Full path and file name, starting with 'C:\'
-%          or:      Short name, such that fullfile(datafolder,file) gives
-%                   complete path and file
-%   plotting:  1 - plot results
-%              0 or absent:  Do not plot
-
-if nargin < 3
-  par = params;
-end
-if nargin < 2
-  plotting = 0;
-end
-TRIP = [];
-TZIP = [];
-for i = 1:numel(files)
-  if plotting
-    figure(i);
-    clf;
-  end
+%          or:      Short name, such that fullfile(datafolder,file) g
   [Trip,Tzip] = analyse_experiment(files(i),plotting,par);
   TRIP =[TRIP;Trip];
   TZIP = [TZIP;Tzip];
