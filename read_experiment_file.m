@@ -4,6 +4,10 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
 %   or original file from Tweezers software.
 % Input: filename - including full path if not in Matlab's search path
 %        Tlist: Table specifying extra heating from the status column
+%           Tlist = []:  Read Tlist from params.m if possible
+%                        Otherwise read from COM file
+%           Tlist = single number: Set temperature to this number
+%           Tlist = NaN:  Report temperatures as NaN
 %        detrend_x - 1: detrending of x, 0: no detrending  (default: 1)
 % Output:
 %    t   : Time (s) 
@@ -16,11 +20,11 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
 
 % Author: Are Mjaavatten
 % Version 2023-12-02: Switched to using readtable
-% Simplified version 2024-01-20
 % Version 2024-03-31: skip initial lines with negative diff(t)
-% Vesion 2024-10-29: supplies datafolder to file if needed
+% Version 2024-10-29: Reads full path from datafolder.m if needed
+% Version 2024-11-18: Added option Tlist = []
 
-  % Make sure all outputs are defined
+  % Make sure all outputs are defined[]
   t = [];
   f = [];
   x = [];
@@ -30,7 +34,7 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
     detrend_x = 1;  % Detrending of x is default
   end
   if nargin < 2
-    Tlist = NaN;
+    Tlist = [];
   end
   % Allow file name containing full path
   if isfile(file)
@@ -95,22 +99,35 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
   end
 
   % *** Temperature  ***
-  % Read bath temperature from COM file.
-  Tbath = T_from_COM(filename); % Temperature outside cell
-  T = ones(size(status))*Tbath;
+  if isempty(Tlist)  % Try reading from params.m
+    if exist("params.m","file")
+      par = params;
+      if isfield(par,'Tlist')
+        Tlist = par.Tlist;
+      end
+    end
+  end
+
+  if isscalar(Tlist)  % This option also handles Tlist == NaN						   
+    T = Tlist*ones(size(t)); % Fixed T specified
+    return
+  end
+
+  try
+    % Read bath temperature from COM file.
+    Tbath = T_from_COM(filename); % Temperature outside cell
+    T = ones(size(t))*Tbath;
+  catch
+    return
+  end
  
-  if ~isnan(Tlist)
+  if ~isnan(T)
     % Read heater setting from digits 2 and 3 in the status column 
     heater_setting = floor(rem(status,1000)/10);  % Number from digits 2 and 3
     heater_setting(status<1000) = NaN; 
-    if isscalar(Tlist)						   
-      T = Tlist*ones(size(heater_setting)); % Fixed T specified
-    else
-      for ii = 1:size(Tlist,2)
-        ix = heater_setting==Tlist(1,ii);
-        T(ix) = T(ix) + Tlist(2,ii);				   
-      end
+    for ii = 1:size(Tlist,2)
+      ix = heater_setting==Tlist(1,ii);
+      T(ix) = T(ix) + Tlist(2,ii);				   
     end
-  end    
-
+  end
 end
