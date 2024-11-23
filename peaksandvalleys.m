@@ -7,15 +7,13 @@ function  [peakpos,valleypos] = peaksandvalleys(f,threshold,lim,plotting)
   %          lim:       If max(f) < lim within a high f period, that perod
   %                     is classified as noise and marked as invalid.
   % Outputs:
-  %          peaks:     Indices of maximum f within all valid high f periods 
-  %          valleys:   Indices of minimum f within all low f periods
+  %          peakpoa:   Indices of maximum f within all valid high f periods 
+  %          valleypos: Indices of minimum f within all low f periods
 
   if nargin < 4
     plotting = 0;
   end
 
-  peakpos = [];
-  valleypos = [];
   % Make sure no f values exactly match threshold:
   exact_hit = f==threshold;
   f(exact_hit) = f(exact_hit)*(1+5*eps);
@@ -36,11 +34,11 @@ function  [peakpos,valleypos] = peaksandvalleys(f,threshold,lim,plotting)
   pfun = @(i,j) peakfun(i,j,f);
   peakpos = arrayfun(pfun,high(:,1),high(:,2));
   if isempty(peakpos)
+    valleypos = [];
     return
   end
 
   vfun = @(i,j) valleyfun(i,j,f);
-  % valleypos = arrayfun(vfun,[high(1:end-1,2)],[high(2:end,1)]);
   valleypos = arrayfun(vfun,[1;high(:,2)],[high(:,1);nf]);
   % Delete spurious peaks or valleys at ends:
   if peakpos(1)<10
@@ -56,6 +54,20 @@ function  [peakpos,valleypos] = peaksandvalleys(f,threshold,lim,plotting)
   if nf-valleypos(end) < 10
     valleypos(end) = [];
   end
+  % Remove the start peak if the value is too low compared to the next 
+  % three peaks.  Correspondingly for the start valley.
+  if peakpos(1) < valleypos(1)
+    peakval = f(peakpos);
+    if peakval(1)/mean(peakval(2:(min(numel(peakpos),4))))<0.8
+      peakpos(1) = [];  % handle bad data before first peak
+    end
+  else
+    valleyval=f(valleypos);
+    if valleyval(1)/mean(valleyval(2:(min(numel(valleypos),4))))>1.2
+      valleypos(1) = [];  % handle bad data before first valley
+    end
+  end
+  % Should this be done also at the end of f?
   if plotting
     figure;
     plot(f);
