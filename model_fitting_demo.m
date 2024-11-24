@@ -3,21 +3,21 @@
 
 Dudko = false;  % True: Fit Bell and Dudko  models  fale: Fit Bell model only
 
+
 % Replace the folder names with thise that are relevant in your case:
-folders = ["02022022","02032022","02042022","02092022","02102022","02142022","02152022","02162022","02182022"];
+folders = ["20230721","20230722","20230724","20230725"];
 
 files = textfile_names(folders);  % Return the names of all *.txt files in the foders, except *COM.txt files
-
-% [TRIP,TZIP] = collect_tables(files);  % Comment out this is TRIP and TZIP have elready been created
+[TRIP,TZIP] = collect_tables(files);  % Comment out this if TRIP and TZIP have elready been created
 
 % Select subset of results:
-ok = TRIP.Temperature>20 & TRIP.Pullingspeed > 500;
+ok = TRIP.Temperature<20 & TRIP.Pullingspeed < 200;
 force = TRIP.Force(ok);
 
-dF = 1; % distance between force bin edges    
+dF = 2; % distance between force bin edges    
 [pd_obs,edges,n_obs] = probdens(force,dF);
 F_list = (edges(1:end-1)+edges(2:end))/2;     % force bin midpoints
-figure; bar(F_list,pd_obs,dF);
+figure; bar(F_list,pd_obs,1);
 
 Tmean = mean(TRIP.Temperature(ok),"omitmissing");
 Fdotmean = mean(TRIP.Fdot(ok),"omitmissing");
@@ -34,13 +34,18 @@ hold on;
 plot(F_plot,pd,'r','linewidth',2);
 xlabel("Force (pN)")
 ylabel("Probability density (pN^-^1)")
-title("Data for T>20\circC, Puling speed > 500 nm/s")
-legend("Observed","Bell model","location","northwest")
+title("Data for T<20\circC, Puling speed < 200nm/s")
+legend("Observed","Bell model","location","northeast")
+limx = xlim;
+limx(1) = min(limx(1),10);
+xlim(limx);   % Make sure the x axis includes 10
+limy = ylim;
+linespace = (limy(2)-limy(1))/15;
 if ~Dudko
   % Write results in figure
-  text(8,0.12,sprintf('n_o_b_s = %d',n_obs))
-  text(8,0.11,sprintf('x^‡ = %.2f ± %.2fnm',theta(1),theta_std(1)))
-  text(8,0.10,sprintf('log10(k0) = %.2f ± %.2f',theta(2),theta_std(2)));
+  text(10.5,limy(2)-linespace*1,sprintf('n_o_b_s = %d',n_obs))
+  text(10.5,limy(2)-linespace*2,sprintf('x^‡ = %.2f ± %.2fnm',theta(1),theta_std(1)))
+  text(10.5,limy(2)-linespace*3,sprintf('log10(k0) = %.2f ± %.2f',theta(2),theta_std(2)));
 end
 
 if Dudko
@@ -61,10 +66,10 @@ if Dudko
   legend("Observed","Bell model","Dudko model","location","northwest")
 
   % Write resukts in figure
-  text(8,0.11,sprintf('n_o_b_s = %d',n_obs))
-  text(8,0.10,sprintf('ΔG^‡ = %.1f ± %.1fzJ',theta(1),theta_std(1)))
-  text(8,0.09,sprintf('x^‡ = %.2f ± %.2fnm',theta(2),theta_std(2)))
-  text(8,0.08,sprintf('log10(k0) = %.2f ± %.2f',theta(3),theta_std(3)))
+  text(10.5,limy(2)-linespace*1,sprintf('n_o_b_s = %d',n_obs))
+  text(10.5,limy(2)-linespace*2,sprintf('ΔG^‡ = %.1f ± %.1fzJ',theta(1),theta_std(1)))
+  text(10.5,limy(2)-linespace*3,sprintf('x^‡ = %.2f ± %.2fnm',theta(2),theta_std(2)))
+  text(10.5,limy(2)-linespace*4,sprintf('log10(k0) = %.2f ± %.2f',theta(3),theta_std(3)))
 end
 
 
