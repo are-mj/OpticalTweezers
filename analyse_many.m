@@ -17,10 +17,10 @@ end
 TRIP = [];
 TZIP = [];
 for i = 1:numel(files)
-  if plotting
-    figure(i);
-    clf;
-  end
+  % if plotting
+  %   figure(i);
+  %   clf;
+  % end
   [Trip,Tzip] = analyse_experiment(files(i),plotting,par);
   TRIP =[TRIP;Trip];
   TZIP = [TZIP;Tzip];
