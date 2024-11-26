@@ -5,7 +5,7 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
 % Input: filename - including full path if not in Matlab's search path
 %        Tlist: Table specifying extra heating from the status column
 %           Tlist = []:  Read Tlist from params.m if possible
-%                        Otherwise read from COM file
+%                        Otherwise use T from COM file
 %           Tlist = single number: Set temperature to this number
 %           Tlist = NaN:  Report temperatures as NaN
 %        detrend_x - 1: detrending of x, 0: no detrending  (default: 1)
