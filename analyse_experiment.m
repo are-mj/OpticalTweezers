@@ -71,14 +71,29 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
   % analyse all traces for rips/zips
   npeaks = numel(peakpos);
   nvalleys = numel(valleypos);
+
+  valleyfirst = peakpos(1)>valleypos(1);
+  peakfirst = peakpos(1)<valleypos(1);
  
   % Remove drift in x by forcing x=0 at valleys
-  x(1:valleypos(1)) = x(1:valleypos(1))-x(valleypos(1));
-  for i = 2:numel(valleypos)
-    rng = valleypos(i-1):valleypos(i);
-    px = polyfit([rng(1),rng(end)],x([rng(1),rng(end)]),1);  
-    x(rng(1:end-1)) = x(rng(1:end-1))-polyval(px,rng(1:end-1))';
-  end  
+  % x(1:valleypos(1)) = x(1:valleypos(1))-x(valleypos(1));
+  % for i = 2:numel(valleypos)
+    % rng = valleypos(i-1):valleypos(i);
+    % px = polyfit([rng(1),rng(end)],x([rng(1),rng(end)]),1);  
+    % x(rng(1:end-1)) = x(rng(1:end-1))-polyval(px,rng(1:end-1))';
+  % end 
+  x(1:valleypos(1)) = x(1:valleypos(1))-min(x(1:valleypos(1)));
+  for i = 1:numel(valleypos)-1
+    rngpull = valleypos(i)+1:peakpos(i+peakfirst);
+    x(rngpull) = x(rngpull)-min(x(rngpull));
+    rngrlx = peakpos(i+peakfirst)+1:valleypos(i+1);
+    x(rngrlx) = x(rngrlx) - min(x(rngrlx));
+  end
+  if peakpos(end)>valleypos(end)
+    rngpull = valleypos(end):peakpos(end);
+    x(rngpull) = x(rngpull)-min(x(rngpull));   
+  end
+
 
   pull = [];  % Array of pulling trace structs
   relax = []; % Array of relaxing trace structs
@@ -103,7 +118,7 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
     p = singlerip_finder(p,par);
     p.pullingspeed = median(diff(p.x)./diff(p.t));
     % Rips with very low deltax are not likely to be real:
-    if ~isempty(p.force) && p.deltax > 5
+    if ~isempty(p.force) && p.deltax > 5 && p.deltax < 30
       pull = [pull;p];
       Trip = [Trip;create_table(p)];
     end
