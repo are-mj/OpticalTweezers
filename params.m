@@ -14,7 +14,7 @@ function par = params
   par.min_fstep = 0.4;   % Minimum reduction in force at an unfoding (pN)
   par.maxrips = 1;       % Maximum number of rips/zips accepted per trace
   par.overstretch = 55;  % Maximum rip/zip force (probably overstretch)
-  par.noisefactor = [3,1]; % Skip rips/zips if fstep/noise < par.noisefactor
+  par.noisefactor = [2,1]; % Skip rips/zips if fstep/noise < par.noisefactor
                            % [rip,zip]   
   par.maxzipfactor = 0.65; % Discard zips that occur at a higher force than
                            % par.maxzipfactor*max(force for the current
