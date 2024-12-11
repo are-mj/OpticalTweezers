@@ -3,15 +3,16 @@
 
 Dudko = false;  % True: Fit Bell and Dudko  models  fale: Fit Bell model only
 
-
-% Replace the folder names with thise that are relevant in your case:
+% copy the contents of Summer school 2024/Testdata.zip to your Datafolder
 folders = ["20230721","20230722","20230724","20230725"];
 
 files = textfile_names(folders);  % Return the names of all *.txt files in the foders, except *COM.txt files
 [TRIP,TZIP] = collect_tables(files);  % Comment out this if TRIP and TZIP have elready been created
 
 % Select subset of results:
-ok = TRIP.Temperature<20 & TRIP.Pullingspeed < 200;
+% ok = TRIP.Temperature<5 & TRIP.Pullingspeed < 200;
+ok = TRIP.Temperature>5 & TRIP.Fdot < 15;
+
 force = TRIP.Force(ok);
 
 dF = 2; % distance between force bin edges    
