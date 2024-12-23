@@ -43,7 +43,7 @@ function s = singlerip_finder(s,par)
   s.dt    = [];
   s.temperature = [];
   s.noise = [];
-
+  fitr = [];
 
   sgn = sign(s.f(end)-s.f(1));  % +1 for pull, -1 for relax
   
@@ -53,14 +53,14 @@ function s = singlerip_finder(s,par)
   s.f = s.f(rng);
   s.x = s.x(rng);
   s.t = s.t(rng);
-  s = lookforrip(s,sgn,par);
+  [s,s.fitr] = lookforrip(s,sgn,par);
 end
 
-function s = lookforrip(s,sgn,par)
+function [s,fitr] = lookforrip(s,sgn,par)
   f = s.f;
   x = s.x;
   t = s.t;
-  
+  fitr = [];
   n_points = numel(f);
   if n_points<30
     return
@@ -74,16 +74,15 @@ function s = lookforrip(s,sgn,par)
     mean_noise = std(f-smoothdata(f,1,'movmean',smoothwindow));   
     % sslope = sort(-slope,'descend');
     sslope = sort(-dslope,'descend');
-    min_peak = max(sslope(10),0.1);
+    min_peak = max(sslope(10),par.minpeak_slope);
   else  % Use relax trace parameters. Scale by signal noise.
     % Skip first third of trace (refolding unlikely here)
     slope = movingslope(f,max(round(n_points*0.03),2));
     dslope = detrend(slope);
     noise = movstd(f-smoothdata(f,1,'movmean',smoothwindow),stdwindow);
     mean_noise = mean(noise);
-    % sslope = sort(slope,'descend');
     sslope = sort(dslope,'descend');
-    min_peak = max(sslope(10),0.003);
+    min_peak = max(sslope(10),par.minpeak_slope);
   end
   
   % Unfolding events give peaks in -slope:
@@ -122,7 +121,7 @@ function s = lookforrip(s,sgn,par)
   rip_index = sort(rip_index(order(1:n_rips)));
   
   % Repeat fitting after invalid rips are removed:
-  [s.pfx_a,s.pfx_b,~,~,fdot,fstep,weight,noise]= singlerip_finder_fit(s,rip_index,par);
+  [s.pfx_a,s.pfx_b,~,~,fdot,fstep,weight,noise,fitr]= singlerip_finder_fit(s,rip_index,par);
   [~,best] = max(fstep.*weight);
   if weight == 0
     return
@@ -142,9 +141,10 @@ function s = lookforrip(s,sgn,par)
     s.deltax = xend - s.ripx;
     s.time = t(rippos);
     s.fdot = fdot(best);
-    s.slope = s.pfx_b(best,1);  
+    s.slope = [s.pfx_b(best,1),s.pfx_a(best,1)];  
     s.fdot = fdot(best);
-    s.slope = s.pfx_b(best,1);
+    s.slopebefore = s.pfx_b(best,1);
+    s.slopeafter = s.pfx_a(best,1);
     s.fstep = fstep(best); 
     s.rip_index = rip_index(best);
     s.pfx_b = s.pfx_b(best,:);
