@@ -29,16 +29,25 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
   if nargin < 2
     plotting = 0;
   end
-  
-  % Allow file name containing full path
-  if isfile(file)
+
+  file = string(strrep(file,'\','/'));  % Use Unix separator
+  data_folder = string(strrep(datafolder,'\','/'));  
+  n = strlength(data_folder);
+  if isfile(file)  % file contains full path
     filename = file;
-  else
-    filename = fullfile(datafolder,file);
-    if ~isfile(filename)
-      error("File %p is not found",filename);
+    if extractBetween(file,1,n)== data_folder
+      % First part of file == datafolder
+      shortname = extractAfter(file,n+1);
+    else
+      shortname = file; % Use full  path
     end
+  elseif isfile(fullfile(datafolder,file))
+    filename = file;
+    shortname = file;
+  else
+    error("File %s not found",file);
   end
+
   Tlist = NaN;
   if isfield(par,'Tlist')
     Tlist = par.Tlist;
@@ -60,7 +69,7 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
     hold on;
     xlabel('Time (s)');
     ylabel('Force (pN)')
-    title(file,'interpreter','none');
+    title(shortname,'interpreter','none');
   end
 
   [peakpos,valleypos] = peaksandvalleys(f,par.threshold,par.lim,0);
@@ -76,12 +85,6 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
   peakfirst = peakpos(1)<valleypos(1);
  
   % Remove drift in x by forcing x=0 at valleys
-  % x(1:valleypos(1)) = x(1:valleypos(1))-x(valleypos(1));
-  % for i = 2:numel(valleypos)
-    % rng = valleypos(i-1):valleypos(i);
-    % px = polyfit([rng(1),rng(end)],x([rng(1),rng(end)]),1);  
-    % x(rng(1:end-1)) = x(rng(1:end-1))-polyval(px,rng(1:end-1))';
-  % end 
   x(1:valleypos(1)) = x(1:valleypos(1))-min(x(1:valleypos(1)));
   for i = 1:numel(valleypos)-1
     rngpull = valleypos(i)+1:peakpos(i+peakfirst);
@@ -93,7 +96,6 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
     rngpull = valleypos(end):peakpos(end);
     x(rngpull) = x(rngpull)-min(x(rngpull));   
   end
-
 
   pull = [];  % Array of pulling trace structs
   relax = []; % Array of relaxing trace structs
@@ -114,7 +116,7 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
     p.f = f(rng);
     p.x = x(rng);
     p.T = T(rng);
-    p.file = filename;
+    p.file = shortname;
     p = singlerip_finder(p,par);
     p.pullingspeed = median(diff(p.x)./diff(p.t));
     % Rips with very low deltax are not likely to be real:
@@ -133,7 +135,7 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
     r.f = f(rng);
     r.x = x(rng);
     r.T = T(rng);
-    r.file = filename;
+    r.file = shortname;
     r = singlerip_finder(r,par);
     r.pullingspeed = abs(median(diff(r.x)./diff(r.t)));
     if ~isempty(r.force) && r.force < f(peakpos(i))*par.maxzipfactor ...
