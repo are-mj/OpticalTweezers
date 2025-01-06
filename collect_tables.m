@@ -18,12 +18,10 @@ function [TRIP,TZIP] = collect_tables(filelist,Outputfolder)
     matfile = fullfile(Outputfolder,strrep(filelist(i),".txt",".mat"));
     if exist(matfile,"file")
       load(matfile,"Trip","Tzip");
-      % fprintf("Collects tables from the Outputfolder for %s\n",filelist(i));
-      fprintf('Collects from app output. Rips: %4d, Zips: %4d Filename: %s\n',height(Trip),height(Tzip),filelist(i));
+      fprintf('File: %25s, Rips: %4d, Zips: %4d, Modified in app\n', filelist(i),height(Trip),height(Tzip));
     else
       [Trip,Tzip] = analyse_experiment(filelist(i));
-      % fprintf("Calculates tables for %s\n",filelist(i));
-      fprintf('Calcuates tables.         Rips: %4d, Zips: %4d Filename: %s\n',height(Trip),height(Tzip),filelist(i));
+      fprintf('File: %25s, Rips: %4d, Zips: %4d, Unmodified\n', filelist(i),height(Trip),height(Tzip));
     end
     if ~isempty(Trip)
       TRIP = [TRIP;Trip];
