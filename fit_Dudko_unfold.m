@@ -12,7 +12,7 @@ function [theta,theta_std,resnorm,resid] = fit_Dudko_unfold(pd_obs,edges,Tmean,F
 %   par      parameter struct with fields Fdot, nu, model
 %     nu:  1/2: quadratic potentiial, 2/3 cubic potential
 %     model alternatives:
-%       'DHS' (Dodko, Hummer & Szabo, 2006)  
+%       'DHS' (Dudko, Hummer & Szabo, 2006)  
 %       'CHS' (Cossio, Hummer & Szabo, 2016) 
 % Output:
 %   theta     Fitted parameters
