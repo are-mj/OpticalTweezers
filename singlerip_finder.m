@@ -43,7 +43,6 @@ function s = singlerip_finder(s,par)
   s.dt    = [];
   s.temperature = [];
   s.noise = [];
-  fitr = [];
 
   sgn = sign(s.f(end)-s.f(1));  % +1 for pull, -1 for relax
   
@@ -53,14 +52,13 @@ function s = singlerip_finder(s,par)
   s.f = s.f(rng);
   s.x = s.x(rng);
   s.t = s.t(rng);
-  [s,s.fitr] = lookforrip(s,sgn,par);
+  s = lookforrip(s,sgn,par);
 end
 
-function [s,fitr] = lookforrip(s,sgn,par)
+function s = lookforrip(s,sgn,par)
   f = s.f;
   x = s.x;
   t = s.t;
-  fitr = [];
   n_points = numel(f);
   if n_points<30
     return
@@ -121,7 +119,8 @@ function [s,fitr] = lookforrip(s,sgn,par)
   rip_index = sort(rip_index(order(1:n_rips)));
   
   % Repeat fitting after invalid rips are removed:
-  [s.pfx_a,s.pfx_b,~,~,fdot,fstep,weight,noise,fitr]= singlerip_finder_fit(s,rip_index,par);
+  [s.pfx_a,s.pfx_b,~,~,fdot,fstep,weight,noise,s.fitrange] = ...
+    singlerip_finder_fit(s,rip_index,par);
   [~,best] = max(fstep.*weight);
   if weight == 0
     return
@@ -143,8 +142,6 @@ function [s,fitr] = lookforrip(s,sgn,par)
     s.fdot = fdot(best);
     s.slope = [s.pfx_b(best,1),s.pfx_a(best,1)];  
     s.fdot = fdot(best);
-    s.slopebefore = s.pfx_b(best,1);
-    s.slopeafter = s.pfx_a(best,1);
     s.fstep = fstep(best); 
     s.rip_index = rip_index(best);
     s.pfx_b = s.pfx_b(best,:);
