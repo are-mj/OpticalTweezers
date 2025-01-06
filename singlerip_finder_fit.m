@@ -1,4 +1,4 @@
-function [pfx_a,pfx_b,pft_a,pft_b,fdot,fstep,weight,noise] = singlerip_finder_fit(s,rip_index,par)
+function [pfx_a,pfx_b,pft_a,pft_b,fdot,fstep,weight,noise,fitr] = singlerip_finder_fit(s,rip_index,par)
 % Fit linear polynomials to f(x) before and after rips or zips
 % Returns data for potentital rips.
 % Input: s: stretching or relaxing trace with experiment results:
@@ -50,7 +50,7 @@ function [pfx_a,pfx_b,pft_a,pft_b,fdot,fstep,weight,noise] = singlerip_finder_fi
     end
     % Fit linear polynomial pfx_b for f(x) after unfolding:
     fitstart = max(1,rip_index(i)-maxpoints);
-    % if i > 1
+    % if i > 1fitr
     %   fitstart = max(fitstart,rip_index(i-1)+2);
     % end
     fitend = rip_index(i)-par.ripsteps;
@@ -70,6 +70,7 @@ function [pfx_a,pfx_b,pft_a,pft_b,fdot,fstep,weight,noise] = singlerip_finder_fi
     fitstart = rip_index(i); 
     fitend = min(fitstart + maxpoints,n_points);
     fitrange_a = fitstart:fitend;
+    fitr = [fitrange_b(1),fitrange_a(end)];
     pfx_a(i,:) = polyfit(x(fitrange_a),f(fitrange_a),1);
     pft_a(i,:) = polyfit(t(fitrange_a),f(fitrange_a),1);
     fstep(i)   = polyval(pft_b(i,:),t(rip_index(i)))-polyval(pft_a(i,:),t(rip_index(i)));
