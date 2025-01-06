@@ -6,7 +6,8 @@ function T = create_table(st)
     T = [];
     return
   end
-  Filename = repmat(shorten_filename(st(1).file,2),[numel(st),1]);
+
+  Filename = repmat(st(1).file,[numel(st),1]);
   Time = vertcat(st.time);
   Deltax = vertcat(st.deltax);
   Force = vertcat(st.force);
