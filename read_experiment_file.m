@@ -1,14 +1,13 @@
 function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x) 
-% Reads a text file from molecular tweezers protein streching experient
-%   Either: Pre-processed file with three columns (e.g. from CleanData app)
-%   or original file from Tweezers software.
+% Reads a test file from Steven Smiths's minitweezer instrument
+%   Can also read a file with only three columns (t,x,f)
 % Input: filename - including full path if not in Matlab's search path
 %        Tlist: Table specifying extra heating from the status column
 %           Tlist = []:  Read Tlist from params.m if possible
 %                        Otherwise use T from COM file
 %           Tlist = single number: Set temperature to this number
 %           Tlist = NaN:  Report temperatures as NaN
-%        detrend_x - 1: detrending of x, 0: no detrending  (default: 1)
+%        detrend_x: - 1: detrending of x, 0: no detrending  (default: 1)
 % Output:
 %    t   : Time (s) 
 %    f   : Force (pN)
@@ -19,12 +18,8 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
 %  Calculated as CycleCounts*4000;
 
 % Author: Are Mjaavatten
-% Version 2023-12-02: Switched to using readtable
-% Version 2024-03-31: skip initial lines with negative diff(t)
-% Version 2024-10-29: Reads full path from datafolder.m if needed
-% Version 2024-11-18: Added option Tlist = []
 
-  % Make sure all outputs are defined[]
+  % Make sure all outputs are defined:
   t = [];
   f = [];
   x = [];
