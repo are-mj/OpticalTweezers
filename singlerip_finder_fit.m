@@ -50,9 +50,6 @@ function [pfx_a,pfx_b,pft_a,pft_b,fdot,fstep,weight,noise,fitr] = singlerip_find
     end
     % Fit linear polynomial pfx_b for f(x) after unfolding:
     fitstart = max(1,rip_index(i)-maxpoints);
-    % if i > 1fitr
-    %   fitstart = max(fitstart,rip_index(i-1)+2);
-    % end
     fitend = rip_index(i)-par.ripsteps;
     if fitend-fitstart < 2  % Too few fitting points
       fstep(i) = 0;
@@ -76,6 +73,7 @@ function [pfx_a,pfx_b,pft_a,pft_b,fdot,fstep,weight,noise,fitr] = singlerip_find
     fstep(i)   = polyval(pft_b(i,:),t(rip_index(i)))-polyval(pft_a(i,:),t(rip_index(i)));
     noise(i) = std(f(fitrange_b)-polyval(pft_b(i,:),t(fitrange_b)));
 
+    % Useful commands to study the rip/zip:
     % figure; plot(t,f,t(rip_index(i)),f(rip_index(i)),'*r');hold on;
     % plot(t(fitrange_b),polyval(pft_b(i,:),t(fitrange_b)),'k',t(fitrange_a),polyval(pft_a(i,:),t(fitrange_a)),'k')
   end
