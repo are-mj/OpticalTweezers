@@ -48,11 +48,7 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
     error("File %s not found",file);
   end
 
-  Tlist = NaN;
-  if isfield(par,'Tlist')
-    Tlist = par.Tlist;
-  end
-  [t,f,x,T] = read_experiment_file(filename,Tlist);
+  [t,f,x,T] = read_experiment_file(filename);
   if numel(t)<10
     waitfor(msgbox(sprintf('%s contains no useful data',filename)));
     error('Bad eperiment file')
@@ -85,6 +81,7 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
   peakfirst = peakpos(1)<valleypos(1);
  
   % Remove drift in x by forcing x=0 at valleys
+  % NOTE: This inevitably results in discontinuos x at peaks
   x(1:valleypos(1)) = x(1:valleypos(1))-min(x(1:valleypos(1)));
   for i = 1:numel(valleypos)-1
     rngpull = valleypos(i)+1:peakpos(i+peakfirst);
