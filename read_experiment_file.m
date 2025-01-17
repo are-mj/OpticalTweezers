@@ -7,7 +7,7 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
 %                        Otherwise use T from COM file
 %           Tlist = single number: Set temperature to this number
 %           Tlist = NaN:  Report temperatures as NaN
-%        detrend_x: - 1: detrending of x, 0: no detrending  (default: 1)
+%        detrend_x:  1: detrending of x, 0: no detrending  (default: 0)
 % Output:
 %    t   : Time (s) 
 %    f   : Force (pN)
@@ -26,7 +26,8 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
   T = [];
 
   if nargin < 3
-    detrend_x = 1;  % Detrending of x is default
+    % detrend_x = 1;  % Detrending of x is default
+    detrend_x = 0;  % No detrending of x is default
   end
   if nargin < 2
     Tlist = [];
@@ -79,10 +80,10 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
   end
   start = 2;  % Skip first record, which seldom makes sense
   % start = 1;
-  % negdt = find(diff(t(1:10))<0);
-  % if ~isempty(negdt)
-  %   start = negdt+1;  % skip any high t values at start
-  % end
+  negdt = find(diff(t(1:10))<0);
+  if ~isempty(negdt)
+    start = negdt+1;  % skip any high t values at start
+  end
   t = t(start:end);
   f = -data.Y_force(start:end);
   xA = data.A_dist_Y(start:end);
@@ -94,25 +95,31 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
   end
 
   % *** Temperature  ***
+  try
+    % Read bath temperature from COM file.
+    [Tbath,instrument] = T_from_COM(filename); % Temperature outside cell
+    T = ones(size(t))*Tbath;
+  catch
+    return
+  end
   if isempty(Tlist)  % Try reading from params.m
     if exist("params.m","file")
       par = params;
-      if isfield(par,'Tlist')
-        Tlist = par.Tlist;
+      if isfield(par,'Tlist') && isfield(par,"Instrumentname")
+        instrumentno = find(contains(instrument,par.Instrumentname));
+        if isempty(instrumentno)
+          error('Unknown instrument: %s. Cannot determine temperature',instrument);
+        else
+          Tlist = par.Tlist{instrumentno};
+        end
       end
+    else
+      error('Parameter function params.m not found')
     end
   end
 
   if isscalar(Tlist)  % This option also handles Tlist == NaN						   
     T = Tlist*ones(size(t)); % Fixed T specified
-    return
-  end
-
-  try
-    % Read bath temperature from COM file.
-    Tbath = T_from_COM(filename); % Temperature outside cell
-    T = ones(size(t))*Tbath;
-  catch
     return
   end
  
