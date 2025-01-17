@@ -1,4 +1,4 @@
-function T = T_from_COM(file)
+function [T,instrument] = T_from_COM(file)
 % Read temperature from the COM file corresponding to the experiment file
 %   2023-10-16: Modified the construction of COM file name.  Now works for
 %   abA.txt (but no longer for aAB.txt)
@@ -20,19 +20,25 @@ function T = T_from_COM(file)
   fid = fopen(COMfile);
   if fid == -1
     T = NaN;  % File not found
-    warning('%s not found',COMfile);    
+    warning('%s not found. Cannot determine temperaturw',COMfile);    
     return
   end
   c = textscan(fid,'%s','delimiter','\n');
   fclose(fid);
   lines = c{1};
+  % Find lines containing 'temperatureB' or 'Instrument name'
   nlines = numel(lines);
   TB = [];
+  instrument = '';
   for j = 1:nlines
     if contains(lines{j},'temperatureB')
       [~,pos] = regexp(lines{j},'temperatureB =');
       TB = [TB;str2double(lines{j}(pos+1:numel(lines{j})))];
     end
+    if contains(lines{j},'Instrument name')
+      [~,pos] = regexp(lines{j},'Instrument name =');
+      instrument = strtrim(lines{j}(pos+1:numel(lines{j})));
+    end    
   end
   T = round(mean(TB,'omitnan'),2);
 end
