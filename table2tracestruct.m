@@ -8,11 +8,11 @@ function s = table2tracestruct(app,T,row,sgn)
 
   ix = find(app.filedata.t == T.time);
   if sgn > 0
-    trace_start = app.filedata.valleys(find(app.filedata.valleys<ix,1,'last'));
-    trace_stop = app.filedata.peaks(find(app.filedata.peaks>ix,1));
+    trace_start = app.filedata.valleypos(find(app.filedata.valleypos<ix,1,'last'));
+    trace_stop = app.filedata.peakpos(find(app.filedata.peakpos>ix,1));
   else
-    trace_start = app.filedata.peaks(find(app.filedata.peaks<ix,1,'last'));
-    trace_stop = app.filedata.valleys(find(app.filedata.valleys>ix,1));
+    trace_start = app.filedata.peakpos(find(app.filedata.peakpos<ix,1,'last'));
+    trace_stop = app.filedata.valleypos(find(app.filedata.valleypos>ix,1));
   end
   range = valid_trace_part(f(trace_start:trace_stop,sgn));
   s.t = app.filedata.t(range);
