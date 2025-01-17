@@ -20,12 +20,16 @@ function par = params
   par.maxzipfactor = 0.65; % Discard zips that occur at a higher force than
                            % par.maxzipfactor*max(force for the current
                            % trace)
-% Extra heating table. 
+% Extra heating table;  
 % Row 1: heater setting, from digits 2 and 3 in status column.
 % Row 2: Corresponding temperature rise over mean COM file value
-  par.Tlist = [0 2 4 6 8 10 12 14 16 20 24 31; ...
+% Depends on instrument name
+  par.Tlist{1} = [0 2 4 6 8 10 12 14 16 20 24 31; ...
   0 3.07 6.96 10.78 13.75 16.92 20.14 22.92 25.10 28.01 30.77 34.83];
-% Ad-hoc change to handle IR laser (09=
+  par.Tlist{2} = [0 2 3 4 6 16;0 5.48 7.72 10.49 14.49 27.30];
+  par.Instrumentname = ["Tim's Gift","SBS-tester 850-808"];
+
+% Ad-hoc change to handle IR laser
   % par.Tlist = [0 2 4 6 8 9 10 14 12 16 20 24 31; ...
   % 0 3.07 6.96 10.78 13.75 -100 16.92 20.14 22.92 25.10 28.01 30.77 34.83];
 end
