@@ -100,6 +100,7 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
     [Tbath,instrument] = T_from_COM(filename); % Temperature outside cell
     T = ones(size(t))*Tbath;
   catch
+    T = NaN*t;
     return
   end
   if isempty(Tlist)  % Try reading from params.m
