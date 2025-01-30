@@ -43,6 +43,7 @@ function s = singlerip_finder(s,par)
   s.dt    = [];
   s.temperature = [];
   s.noise = [];
+  s.fitrange = [];
 
   sgn = sign(s.f(end)-s.f(1));  % +1 for pull, -1 for relax
   
