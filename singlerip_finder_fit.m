@@ -76,6 +76,8 @@ function [pfx_a,pfx_b,pft_a,pft_b,fdot,fstep,weight,noise,fitr] = singlerip_find
     % Useful commands to study the rip/zip:
     % figure; plot(t,f,t(rip_index(i)),f(rip_index(i)),'*r');hold on;
     % plot(t(fitrange_b),polyval(pft_b(i,:),t(fitrange_b)),'k',t(fitrange_a),polyval(pft_a(i,:),t(fitrange_a)),'k')
+    % figure; plot(x,f,x(rip_index(i)),f(rip_index(i)),'*r');hold on
+	  % plot(x(fitrange_b),polyval(pfx_b(i,:),x(fitrange_b)),'k',x(fitrange_a),polyval(pft_a(i,:),x(fitrange_a)),'k')
   end
 
   % Skip events if fstep < noise*par.noisefactors
