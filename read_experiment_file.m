@@ -32,6 +32,7 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
   if nargin < 2
     Tlist = [];
   end
+  % filename = fullfile(datafolder,file);
   % Allow file name containing full path
   if isfile(file)
     filename = file;
@@ -60,6 +61,7 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
       t = data.Var1;
       x = data.Var2;
       f = data.Var3;
+      T = NaN(size(t));
     end
     return
   end
