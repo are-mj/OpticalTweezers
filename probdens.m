@@ -17,7 +17,7 @@ function [pd_obs,edges,n_obs] = probdens(force,dF)
     n_obs = 0;
     return
   end
-  edges = floor(min(force/dF))*dF:dF:ceil(max(force/dF))*dF;
+  edges = (floor(min(force/dF)))*dF:dF:(ceil(max(force/dF)))*dF;
   Values = histcounts(force,edges);
   n_obs = sum(Values);
   pd_obs = Values'/n_obs/dF;  % Probability density
