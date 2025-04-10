@@ -24,9 +24,19 @@ function [TRIP,TZIP] = collect_tables(filelist,Outputfolder)
       fprintf('File: %25s, Rips: %4d, Zips: %4d, Unmodified\n', filelist(i),height(Trip),height(Tzip));
     end
     if ~isempty(Trip)
-      TRIP = [TRIP;Trip];
+      try
+        TRIP = [TRIP;Trip];
+      catch  % Modified table not compatible
+        [Trip,Tzip] = analyse_experiment(filelist(i));
+        fprintf('File: %25s, Rips: %4d, Zips: %4d, Modified table incompatible\n', filelist(i),height(Trip),height(Tzip));
+        TRIP = [TRIP;Trip];
+      end
     end
     if ~isempty(Tzip)
-      TZIP = [TZIP;Tzip];
+      try
+        TZIP = [TZIP;Tzip];
+      catch
+        % skip
+      end
     end
   end
