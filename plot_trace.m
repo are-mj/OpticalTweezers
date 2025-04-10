@@ -97,7 +97,7 @@ function h = ripplot(ax,s,sgn,par)
     if i < n_rips
       % to avoid confusing multiple lines, make sure arange does not 
       % overlap with brange for next rip
-      arange = [arange(1),min(arange(end),pos(i+1)-par.ripsteps-par.linespan)];
+      arange = [arange(1),min(arange(end),pos(i+1)-par.ripsteps-fitspan)];
     end    
     if diff(arange)>0 
       h.Slope(i,2) = plot(ax,s.x(arange),polyval(s.pfx_a(i,:),s.x(arange)),'k','LineWidth',1);
