@@ -1,4 +1,4 @@
-function [theta,ci,resnorm] = fit_Bell_refold(pd_obs,edges,Tmean,Fdot,theta0)
+function [theta,resnorm] = fit_Bell_refold(pd_obs,edges,Tmean,Fdot,theta0)
 % Fitting parameters for Bell refolding model
 % Input:
 %   pd_obs   column array of experiment probability densities
@@ -11,10 +11,12 @@ function [theta,ci,resnorm] = fit_Bell_refold(pd_obs,edges,Tmean,Fdot,theta0)
 % F, pd and Fdotmean may be caclulated by probability_density.m
 % Output:
 %   theta    Fitted parameters
-%   ci       95% confidence intervals for the parameter estimate 
+																 
 %   resnorm  norm of difference between input and model pd
 
 % Version 1.0 2023-08-13
+% Version 2.0 2025-06-25 Removed confidence interval by nlparci
+%                        as this often gave incorrect results 
 
   % Optimization parameters:
   opt = optimoptions('lsqcurvefit');
@@ -34,8 +36,8 @@ function [theta,ci,resnorm] = fit_Bell_refold(pd_obs,edges,Tmean,Fdot,theta0)
     error('lsqcurvefit problems. Exitflag: %d',exitflag)
   end  
   
-    % ***  Confidence interval for identified perameters ***
-  ci = nlparci(theta,resid,'jacobian',J);  % 95% confidence interval
-  % theta_std = (ci(:,2)-theta)/fzero(@(x)normcdf(x)-0.975,-1); % Standard devation
+															
+																	
+																				   
 
 end

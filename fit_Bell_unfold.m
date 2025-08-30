@@ -1,4 +1,4 @@
-function [theta,theta_std,resnorm,resid] = fit_Bell_unfold(pd_obs,edges,Tmean,Fdot,theta0)
+function [theta,resnorm] = fit_Bell_unfold(pd_obs,edges,Tmean,Fdot,theta0)
 % Fitting Bell_unfold_probability to observed probability densities
 % Input:
 %   pd_obs   column array of experiment probability densities
@@ -10,8 +10,11 @@ function [theta,theta_std,resnorm,resid] = fit_Bell_unfold(pd_obs,edges,Tmean,Fd
 %   theta0   Initial guess for model parameters [dx;log10(k0)]
 % Output:
 %   theta     Fitted parameters
-%   theta_std Standard deviations for the parameter estimate 
+															 
 %   resnorm   Norm of difference between input and model pd_obs
+
+% Version 2.0 2025-06-25 Removed confidence interval by nlparci
+%                        as this often gave incorrect results 
 
   % Optimization parameters:
   opt = optimoptions('lsqcurvefit');
@@ -26,10 +29,6 @@ function [theta,theta_std,resnorm,resid] = fit_Bell_unfold(pd_obs,edges,Tmean,Fd
   [theta,resnorm,resid,exitflag,~,~,J] = ...
     lsqcurvefit(probfun,theta0,F,pd_obs,lb,ub,opt);
   if exitflag < 1
-    error('lsqcurvefit problems. Exitflag: %d',exitflag)
+    warning('lsqcurvefit problems. Exitflag: %d',exitflag)
   end 
-  if nargout > 1
-    ci = nlparci(theta,resid,'jacobian',J);  % 95% confidence interval
-    theta_std = (ci(:,2)-theta)/fzero(@(x)normcdf(x)-0.975,-1); % Standard deviation
-  end
 end

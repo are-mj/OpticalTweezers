@@ -1,7 +1,7 @@
-function [theta,theta_std,resnorm,resid] = fit_Dudko_unfold(pd_obs,edges,Tmean,Fdot,theta0,par)
+function [theta,resnorm] = fit_Dudko_unfold(pd_obs,edges,Tmean,Fdot,theta0,par)
 % Fitting parameters for the DHS or CHS unfolding model
 %   DHS: Dudko, Hummer & Szabo (2006), CHS: Cossio, Hummer & Szabo (2016)
-% Input:
+% Input: 
 %   pd_obs   column array of experiment probability densities
 %   edges    bin edges for pd_obs.  pd_obs(i) is the mean probabiltydensity
 %                  in the interval )bin) from edges(i) to edges(i+1)
@@ -16,10 +16,11 @@ function [theta,theta_std,resnorm,resid] = fit_Dudko_unfold(pd_obs,edges,Tmean,F
 %       'CHS' (Cossio, Hummer & Szabo, 2016) 
 % Output:
 %   theta     Fitted parameters
-%   theta_std Standard deviations for the parameter estimates 
 %   resnorm   Norm of difference between input and model pd_obs
 
 % Version 4.1,October 2023
+% Version 5.0 2025-06-25 Removed confidence interval by nlparci
+%                        as this often gave incorrect results 
 
   % Optimization parameters:
   opt = optimoptions('lsqcurvefit');
@@ -62,12 +63,4 @@ function [theta,theta_std,resnorm,resid] = fit_Dudko_unfold(pd_obs,edges,Tmean,F
   dx  = a*DG/par.nu;
   theta = [DG;dx;lgk0];
   
-  % ***  Confidence interval for identified perameters ***
-  % J is the Jacbian of f(thetacalc) = taufun(thetacalc,...).  
-  % JG is the Jacbian of fG(theta) = f(thetacalc(theta))
-  da_dDG = -par.nu*dx/DG^2;
-  da_dx = par.nu/DG;
-  JG = [J(:,1)+J(:,2)*da_dDG,J(:,2)*da_dx,J(:,3)];
-  ci = nlparci(theta,resid,'jacobian',JG);  % 95% confidence interval
-  theta_std = (ci(:,2)-theta)/fzero(@(x)normcdf(x)-0.975,-1); % Standard deviation
 end

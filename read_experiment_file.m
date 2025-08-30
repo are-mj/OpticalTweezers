@@ -36,12 +36,14 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
   % Allow file name containing full path
   if isfile(file)
     filename = file;
+  elseif ~isnan(str2double(file))  % Index in Filelist.m
+    filename = app.files(str2double(file));
   else
     filename = fullfile(datafolder,file);
-    if ~isfile(filename)
-      error("File %p is not found",filename);
-    end
-  end  
+  end
+  if ~isfile(filename)
+    error("File %s is not found",filename);
+  end
   filename = strrep(filename,'\','/');  % Use Unix separator
   warning('off','MATLAB:table:ModifiedAndSavedVarnames');
   data = readtable(filename);
@@ -67,14 +69,10 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
   end
 %% Full file format:
   timecol = contains(data.Properties.VariableNames,'time_sec_');
-  if any(timecol)
-    t = data.time_sec_;
-  else
-    cps = 4000;  % CycleCounts per second
-    countscol = contains(data.Properties.VariableNames,'CycleCount');
-    if any(countscol)
-      t = data.CycleCount/cps;
-    end    
+  cps = 4000;  % CycleCounts per second
+  countscol = find(contains(data.Properties.VariableNames,'CycleCount'));
+  if any(countscol)
+    t = table2array(data(:,countscol))/cps;  
   end
 
   if numel(t) < 10
