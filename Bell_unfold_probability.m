@@ -2,7 +2,6 @@ function p = Bell_unfold_probability(theta,F,Tmean,Fdotmean)
 % Unfold probability density using the Bell model
 % Input:
 %  theta     : [dx;log10(k0)];
-							
 %  Tmean     : Temperature (°C)  (scalar)
 %  F         : Force vector (pN)
 %  Fdotmean  : Observed rate of change for force
@@ -17,5 +16,4 @@ function p = Bell_unfold_probability(theta,F,Tmean,Fdotmean)
   % Unfolding rate:
   kU = k0*exp(beta*F*dx);
   p = kU/Fdotmean.*exp(k0/(beta*Fdotmean*dx)*(1-exp(beta*F*dx)));
-								   
 end

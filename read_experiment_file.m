@@ -69,10 +69,15 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
   end
 %% Full file format:
   timecol = contains(data.Properties.VariableNames,'time_sec_');
-  cps = 4000;  % CycleCounts per second
-  countscol = find(contains(data.Properties.VariableNames,'CycleCount'));
-  if any(countscol)
-    t = table2array(data(:,countscol))/cps;  
+  % if any(timecol)
+  %   t = data.time_sec_;
+  % else
+    cps = 4000;  % CycleCounts per second
+    countscol = find(contains(data.Properties.VariableNames,'CycleCount'));
+    if any(countscol)
+      % t = data.CycleCount/cps;
+      t = table2array(data(:,countscol))/cps;
+    % end    
   end
 
   if numel(t) < 10

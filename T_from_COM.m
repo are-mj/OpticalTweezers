@@ -8,14 +8,20 @@ function [T,instrument] = T_from_COM(file)
   
   % Extract fiber name from file name
   [path,name] = fileparts(file);
-  name = char(name);  % To allow accessing individual characters 
-  corename = name(isstrprop(name,'alpha'));
-  if length(corename) >= 3 && isequal(isstrprop(corename(1:3),'lower'),[1 1 0]) % abCxxx
-    fiber = corename(1:2);
+  Berkeleypattern = caseInsensitivePattern("B" + digitsPattern(3)+ ...
+    "_"+digitsPattern(3));
+  if contains(name,Berkeleypattern)
+    COMfile = fullfile(path,extract(name,Berkeleypattern)+"COM.txt");
   else
-    fiber = corename(1);
+    name = char(name);  % To allow accessing individual characters 
+    corename = name(isstrprop(name,'alpha'));
+    if length(corename) >= 3 && isequal(isstrprop(corename(1:3),'lower'),[1 1 0]) % abCxxx
+      fiber = corename(1:2);
+    else
+      fiber = corename(1);
+    end
+    COMfile = fullfile(path,strcat(fiber,'COM.txt'));
   end
-  COMfile = fullfile(path,strcat(fiber,'COM.txt'));
   
   fid = fopen(COMfile);
   if fid == -1
@@ -31,8 +37,8 @@ function [T,instrument] = T_from_COM(file)
   TB = [];
   instrument = '';
   for j = 1:nlines
-    if contains(lines{j},'temperatureB')
-      [~,pos] = regexp(lines{j},'temperatureB =');
+    if contains(lines{j},'tempB') | contains(lines{j},'temperatureB')
+      [~,pos] = regexp(lines{j},'B =');
       TB = [TB;str2double(lines{j}(pos+1:numel(lines{j})))];
     end
     if contains(lines{j},'Instrument name')

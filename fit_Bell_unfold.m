@@ -10,7 +10,6 @@ function [theta,resnorm] = fit_Bell_unfold(pd_obs,edges,Tmean,Fdot,theta0)
 %   theta0   Initial guess for model parameters [dx;log10(k0)]
 % Output:
 %   theta     Fitted parameters
-															 
 %   resnorm   Norm of difference between input and model pd_obs
 
 % Version 2.0 2025-06-25 Removed confidence interval by nlparci

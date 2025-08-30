@@ -11,7 +11,6 @@ function [theta,resnorm] = fit_Bell_refold(pd_obs,edges,Tmean,Fdot,theta0)
 % F, pd and Fdotmean may be caclulated by probability_density.m
 % Output:
 %   theta    Fitted parameters
-																 
 %   resnorm  norm of difference between input and model pd
 
 % Version 1.0 2023-08-13
@@ -35,9 +34,5 @@ function [theta,resnorm] = fit_Bell_refold(pd_obs,edges,Tmean,Fdot,theta0)
   if exitflag < 1
     error('lsqcurvefit problems. Exitflag: %d',exitflag)
   end  
-  
-															
-																	
-																				   
 
 end

@@ -1,0 +1,1881 @@
+classdef RipAnalysis < matlab.apps.AppBase
+
+  % Properties that correspond to app components
+  properties (Access = public)
+    UIFigure                      matlab.ui.Figure
+    TabGroup                      matlab.ui.container.TabGroup
+    HomeTab                       matlab.ui.container.Tab
+    FilelistindexLabel            matlab.ui.control.Label
+    UseFilelistmCheckBox          matlab.ui.control.CheckBox
+    FilelistindexSpinner          matlab.ui.control.Spinner
+    DatafileLabel                 matlab.ui.control.Label
+    ExportfigureButton            matlab.ui.control.Button
+    RemoveripszipsButton          matlab.ui.control.Button
+    OutputfolderTextArea          matlab.ui.control.TextArea
+    OutputfolderTextArea_2Label   matlab.ui.control.Label
+    DatafileTextArea              matlab.ui.control.TextArea
+    DatafolderTextArea            matlab.ui.control.TextArea
+    DatafolderTextArea_2Label     matlab.ui.control.Label
+    yaxisButtonGroup              matlab.ui.container.ButtonGroup
+    TButton                       matlab.ui.control.RadioButton
+    xButton                       matlab.ui.control.RadioButton
+    fButton                       matlab.ui.control.RadioButton
+    RemoveintervalLabel           matlab.ui.control.Label
+    AtendButton                   matlab.ui.control.Button
+    AtbeginningButton             matlab.ui.control.Button
+    xaxisButtonGroup              matlab.ui.container.ButtonGroup
+    RecordButton                  matlab.ui.control.RadioButton
+    TimesButton                   matlab.ui.control.RadioButton
+    AddripzipButton               matlab.ui.control.Button
+    SelectfolderButton_2          matlab.ui.control.Button
+    SaveButton                    matlab.ui.control.Button
+    RecallsavedchangesButton      matlab.ui.control.Button
+    RestoreviewButton             matlab.ui.control.Button
+    SelectfileButton              matlab.ui.control.Button
+    SelectfolderButton            matlab.ui.control.Button
+    UIAxes                        matlab.ui.control.UIAxes
+    SinglefvsxtracesTab           matlab.ui.container.Tab
+    ShowtracesButtonGroup         matlab.ui.container.ButtonGroup
+    RelaxButton                   matlab.ui.control.RadioButton
+    PullButton                    matlab.ui.control.RadioButton
+    BothButton                    matlab.ui.control.RadioButton
+    allcyclesLabel                matlab.ui.control.Label
+    ExportfigureButton_2          matlab.ui.control.Button
+    dx2Label                      matlab.ui.control.Label
+    xLabel_2                      matlab.ui.control.Label
+    f2Label                       matlab.ui.control.Label
+    ForceLabel_2                  matlab.ui.control.Label
+    t23Label                      matlab.ui.control.Label
+    EndLabel_2                    matlab.ui.control.Label
+    t22Label                      matlab.ui.control.Label
+    Event2Label                   matlab.ui.control.Label
+    t21Label                      matlab.ui.control.Label
+    StartLabel_2                  matlab.ui.control.Label
+    Trace2Label                   matlab.ui.control.Label
+    dx1Label                      matlab.ui.control.Label
+    xLabel                        matlab.ui.control.Label
+    f1Label                       matlab.ui.control.Label
+    ForceLabel                    matlab.ui.control.Label
+    t13Label                      matlab.ui.control.Label
+    EndLabel                      matlab.ui.control.Label
+    t12Label                      matlab.ui.control.Label
+    Event1Label                   matlab.ui.control.Label
+    t11Label                      matlab.ui.control.Label
+    StartLabel                    matlab.ui.control.Label
+    Trace1Label                   matlab.ui.control.Label
+    CycletypeButtonGroup          matlab.ui.container.ButtonGroup
+    RelaxpullButton               matlab.ui.control.RadioButton
+    PullrelaxButton               matlab.ui.control.RadioButton
+    CyclenoSpinner                matlab.ui.control.Spinner
+    CyclenoSpinnerLabel           matlab.ui.control.Label
+    UIAxes4                       matlab.ui.control.UIAxes
+    UIAxes3                       matlab.ui.control.UIAxes
+    MultiplefvsxtracesTab         matlab.ui.container.Tab
+    ExportgraphButton             matlab.ui.control.Button
+    StarttimeEditField            matlab.ui.control.NumericEditField
+    StarttimeEditFieldLabel       matlab.ui.control.Label
+    NumberofcyclesEditField       matlab.ui.control.NumericEditField
+    NumberofcyclesEditFieldLabel  matlab.ui.control.Label
+    CyclespacingnmEditField       matlab.ui.control.NumericEditField
+    CyclespacingnmEditFieldLabel  matlab.ui.control.Label
+    UIAxes5                       matlab.ui.control.UIAxes
+    UIAxes6                       matlab.ui.control.UIAxes
+  end
+
+
+  % Version 0.5: Using Tab Groups to include controls for 
+  % showing force vs. trap position x
+  properties (Access = private)
+    Datafolder % Current folder path for experiment data files
+    Datafile % Experiment data file name
+    traces % arrays of pull and relax traces
+    ncycles % Current number of cycles
+    cycleno % Index of current cycle in traces.pull and traces.relax
+    h % struct of graphics handles to the current cycle plot
+    settings % Copy of settings struct in RipAnalysis_settings
+    filedata % Holds all data returned from analyse_experiment
+    h2 %struct of graphics handles to the Single force vs x trace plot
+    par % Parameter struct
+    % if a rip is identified in cycle i
+    Outputfolder % Folder for results Matlab tables
+    Multiple_f_x % State for app.UIAxes5
+    h3 % struct of graphics handles to the Multiple f vs x traces tab
+    filelist % List of experiments file names (icluding subfolders under Datafolder)
+    fileno % Current index in filelist
+  end
+
+  methods (Access = public)
+
+  end
+
+  methods (Access = private)
+
+    function reset_axis_limits(app,~)
+      n = app.CyclenoSpinner.Value;
+      Xlimits = [min(app.traces.pull(n).x),max(app.traces.pull(n).x)];
+      Ylimits = [min(app.traces.pull(n).f),max(app.traces.pull(n).f)];
+      set(app.UIAxes,'Xlim',Xlimits);
+      set(app.UIAxes,'Ylim',Ylimits);
+    end
+
+    function read_experiment(app)
+      % file_full = strrep(fullfile(app.Datafolder,app.Datafile),'\','/');
+      [~,~,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(app.Datafile);
+      app.filedata.t = t;
+      app.filedata.f = f;
+      app.filedata.x = x;
+      app.filedata.T = T;
+      app.filedata.recordno = (1:numel(t))';
+      app.filedata.peakpos = peakpos;
+      app.filedata.valleypos = valleypos;
+      app.filedata.limits = [1,numel(t)];
+      app.traces.pull = pull;
+      app.traces.relax = relax;
+
+      plot_file(app,app.UIAxes)
+    end
+
+    function plot_file(app,axes,limx)
+      % Plots force or extent vs time in the upper axes
+
+      % initialise variables
+      riptime = [];
+      ripforce = [];
+      riprecord = [];
+      ziptime = [];
+      zipforce = [];
+      ziprecord = [];
+      if ~isempty(app.traces.pull)
+        riptime = vertcat(app.traces.pull.time);
+        ripforce = vertcat(app.traces.pull.force);
+        riprecord = find(ismember(app.filedata.t,riptime));
+      end
+      if ~isempty(app.traces.relax)
+        ziptime = vertcat(app.traces.relax.time);
+        zipforce = vertcat(app.traces.relax.force);
+        ziprecord = find(ismember(app.filedata.t,ziptime));
+      end
+      xrange = app.filedata.limits(1):app.filedata.limits(2);
+      if app.fButton.Value
+        yvar = app.filedata.f(xrange);
+        ylbl = 'pN';
+      elseif app.xButton.Value
+        yvar = app.filedata.x(xrange);
+        ylbl = 'nm';
+      else
+        yvar = app.filedata.T(xrange);
+        ylbl = '°C';
+      end
+      if app.TimesButton.Value
+        xvar = app.filedata.t(xrange);
+        xrip = riptime;
+        xzip = ziptime;
+        xlbl = 'Timestamp (s)';
+      else
+        xvar = app.filedata.recordno(xrange);
+        xrip = riprecord;
+        xzip = ziprecord;
+        xlbl = 'Record no';
+      end
+      y1 = min(yvar);
+      y2 = max(yvar);
+      yrange = y2-y1;
+      y1 = y1 - 0.05*max(yrange,1);
+      y2 = y2 + 0.05*max(yrange,1);
+      hold(axes,"off")
+      xlim(axes,[xvar(1),xvar(end)]);
+      ylim(axes,[y1,y2]);
+      plot(axes,xvar,yvar);
+      if app.fButton.Value
+        hold(axes,"on")
+        plot(axes,xrip,ripforce,'*r');
+        plot(axes,xzip,zipforce,'ok','MarkerFaceColor',[1 1 1]);
+      end
+      xlim(axes,[xvar(1),xvar(end)]);
+      title(axes,app.Datafile,'interpreter','none');
+      xlabel(axes,xlbl);
+      ylabel(axes,ylbl);
+      box(axes,'on');
+      zoom(axes,'on');
+      % app.UIAxes2.Toolbar.Visible = "off";
+      app.xaxisButtonGroup.Visible = "on";
+      if nargin > 2
+        xlim(axes,limx)
+      end
+    end
+
+    function file = matfilename(app)
+      % Create filename for the uutput table mat file
+      slashes = strfind(app.Datafolder,'/');
+      part1 = extractAfter(app.Datafolder,slashes(end));
+      part2 = strrep(app.Datafile,'.txt','.mat');
+      file = strcat(part1,"_",part2);
+    end
+
+
+
+    function [localrips,localzips,visiblerips,visiblezips] = selectrip(app,mode)
+      % creates a listdlg showing all rips and zips in view
+      % Returns the rip and zip numbers in the visible part of the plot
+      % and the tables converting local numbering to global
+      %
+      % mode = 'Single' or 'Multiple' (default)
+      if nargin < 2
+        mode = 'Multiple';  % allow selection of multiple rips
+      end
+      localrips = [];
+      localzips = [];
+      riptimes = vertcat(app.traces.pull.time);
+      ziptimes = vertcat(app.traces.relax.time);
+      xrng = xlim(app.UIAxes);
+      if app.TimesButton.Value
+        visiblerips = find(riptimes>=xrng(1) & riptimes <= xrng(2));
+        visiblezips = find(ziptimes>=xrng(1) & ziptimes <= xrng(2));
+      else
+        riprecords = find(ismember(app.filedata.t,riptimes));
+        ziprecords = find(ismember(app.filedata.t,ziptimes));
+        visiblerips = find(riprecords>=xrng(1) & riprecords <= xrng(2));
+        visiblezips = find(ziprecords>=xrng(1) & ziprecords <= xrng(2));
+      end
+      nrip = numel(visiblerips);
+      nzip = numel(visiblezips);
+      if nrip + nzip < 1
+        msgbox('No rips or zips visible. Please pan and zoome to another range');
+        return
+      elseif nrip + nzip > 20
+        msgbox('More than 20 rips or zips visible. Please zoom to a smaller range');
+        return
+      end
+      ripforces = vertcat(app.traces.pull.force);
+      zipforces = vertcat(app.traces.relax.force);
+      % Number the visible rips and zips, starting at 1 and collect names
+      % in riplist
+      riplist = strings(nrip+nzip,1);
+      for i = 1:nrip
+        k = visiblerips(i);
+        text(app.UIAxes,riptimes(k),ripforces(k)+1,num2str(i));
+        riplist(i) = strcat("rip",num2str(i));
+      end
+      for i = 1:nzip
+        k = visiblezips(i);
+        text(app.UIAxes,ziptimes(k),zipforces(k)+1,num2str(i));
+        riplist(i+nrip) = strcat("zip",num2str(i));
+      end
+      [indx,~] = listdlg('promptstring','Select rip or zip to modify', ...
+        'ListString',riplist,'SelectionMode',mode);
+      localrips = indx(indx<=nrip);
+      localzips = indx(indx>nrip)-nrip;
+    end
+
+    % function [trace,neighbour] = nexttrace(app,trace)
+    %   % Range of next trace after trace, whether or not it has a rip/zip
+    %   t0 = trace.time;
+    %   peakpos = app.filedata.peakpos;
+    %   valleypos = app.filedata.valleypos;
+    %   relax = app.traces.relax;
+    %   pull = app.traces.pull;
+    %   t = app.filedata.t;
+    %   nextpeak = find(t(peakpos)>t0,1);
+    %   nextvalley = find(t(valleypos)>t0,1);
+    %   sgn = sign(trace.f(end)-trace.f(1));
+    %   neighbour = [];
+    %   if sgn > 0  % pulling trace, trace is a rip struct
+    %     nextzip = find(vertcat(relax.time)>t0,1);
+    %     if ~isempty(nextzip) & relax(nextzip).time < t(valleypos(nextvalley))
+    %       neighbour = relax(nextzip);
+    %     else  % No zip in next ttace
+    %       nextrange = peakpos(nextpeak):valleypos(nextvalley);
+    %       neighbour.t = t(nextrange);
+    %       neighbour.f = app.filedata.f(nextrange);
+    %       neighbour.x = app.filedata.x(nextrange);
+    %     end
+    %     % shift and scale the x values
+    %     [trace,neighbour] = adjust_x(trace,neighbour);
+    %   else  % Relaxing trace, trace is a zip struct
+    %     nextrip = find(vertcat(pull.time)>t0,1);
+    %     if ~isempty(nextrip) & pull(nextrip).time < t(peakpos(nextpeak))
+    %       neighbour = pull(nextrip);
+    %     else % No rip in next relax trace
+    %       nextrange = valleypos(nextvalley):peakpos(nextpeak);
+    %       neighbour.t = t(nextrange);
+    %       neighbour.f = app.filedata.f(nextrange);
+    %       neighbour.x = app.filedata.x(nextrange);
+    %     end
+    %     [trace,neighbour] = adjust_x(trace,neighbour);
+    %   end
+    % end
+
+    function setlimit(app,type)
+      % ***********************************************
+      % Cast magic spell to make ginput crosshairs apppear in App window:
+      fhv = app.UIFigure.HandleVisibility;        % Current state
+      app.UIFigure.HandleVisibility = 'callback'; % Temporarily make UIFigure handle visible outside app
+      set(0, 'CurrentFigure', app.UIFigure);     
+      [x,~] = ginput(1);
+      hh = xline(app.UIAxes,x);
+      answer = questdlg("OK?");
+      while strcmp(answer,'No')
+        delete(hh);
+        [x,~] = ginput(1);
+        hh = xline(app.UIAxes,x);
+        answer = questdlg("OK?");
+      end
+      app.UIFigure.HandleVisibility = fhv;
+      % Magic spell lifted
+      % ***********************************************
+      delete(hh);
+      if ~strcmp(answer,'Yes')
+        return
+      end
+      % xline(app.UIAxes,x);
+      if app.RecordButton.Value
+        r = x;
+      else
+        % r = find(app.filedata.t==x);
+        [~,r] = min(abs(app.filedata.t-x));
+      end
+
+      switch type
+        case 'Start'
+          app.filedata.limits(1) = r;
+        case 'End'
+          app.filedata.limits(2) = r;
+      end
+      ok = app.filedata.peakpos>app.filedata.limits(1) & ...
+        app.filedata.peakpos<app.filedata.limits(2);
+      app.filedata.peakpos = app.filedata.peakpos(ok);
+      ok = app.filedata.valleypos>app.filedata.limits(1) & ...
+        app.filedata.valleypos<app.filedata.limits(2);
+      app.filedata.valleypos = app.filedata.valleypos(ok);      
+
+      plot_file(app,app.UIAxes)
+    end
+
+    function [answer,new,sgn] = tryrip(app)
+      % Called by AddripzipButtonPushed to try out adding a rip
+      zoom(app.UIAxes,'on');
+      % msg = 'To zoom or pan: move message box outside axes. Click OK when ready.';
+      % waitfor(msgbox(msg));
+      new = [];
+      [rip,~] = ginput(1);
+      t = app.filedata.t;
+      f = app.filedata.f;
+      x = app.filedata.x;
+      if app.TimesButton.Value
+        ix = find(t>rip,1);
+      else
+        ix = rip;
+      end
+      % ix is the index in t,x anf f correspondig to the selected point
+      lastpeak = find(app.filedata.peakpos < ix,1,'last');
+      lastpeakpos = app.filedata.peakpos(lastpeak);
+      lastvalley = find(app.filedata.valleypos < ix,1,'last');
+      lastvalleypos = app.filedata.valleypos(lastvalley);
+      nolastpeak = isempty(lastpeak);     % No peaks before ix
+      nolastvalley = isempty(lastvalley); % No valleys before ix
+      if nolastpeak & nolastvalley
+        msgbox("Unable to add rip/zip before first peak or valley");
+        answer = "No";
+        return
+      elseif nolastpeak
+        lastpeak = 0;
+        lastpeakpos = 1;
+      elseif nolastvalley
+        lastvalley = 0;
+        lastvalleypos = 1;
+      end
+
+      if lastpeakpos > lastvalleypos  % pulling trace
+        tracerng = lastpeakpos:app.filedata.valleypos(lastvalley+1);
+      else
+        tracerng = lastvalleypos:app.filedata.peakpos(lastpeak+1);
+      end
+      sgn = sign(lastvalleypos-lastpeakpos);  % 1: pull. -1: relax
+      rng = tracerng(valid_trace_part(f(tracerng),sgn));
+      % rng is the index range for the valid part of the trace around ix
+      if ~ismember(ix,rng)  % ix is not inside a valid trace part
+        answer = "No";
+        return
+      end
+      if app.PullrelaxButton.Value
+        app.cycleno = lastvalleypos;
+      else
+        app.cycleno = lastpeakpos; 
+      end
+      % fitting range before rip/zip
+      nf = numel(rng);
+      fitb_start = max(ix - round(app.par.maxfitfraction*nf),rng(1));
+      fitrange_b = fitb_start:ix;
+      % fitting range after rip/zip
+      fita_end = min(ix+2*app.par.ripsteps+round(app.par.maxfitfraction*nf),rng(end));
+      fitrange_a = (ix + +2*app.par.ripsteps):fita_end;
+      % Fit straight lines before and after rip/zip:
+      pft_b = polyfit(t(fitrange_b),f(fitrange_b),1);
+      pft_a = polyfit(t(fitrange_a),f(fitrange_a),1);
+      if app.TimesButton.Value
+        htry(1) = plot(app.UIAxes,t(fitrange_b),polyval(pft_b,t(fitrange_b)),'k');
+        htry(2) = plot(app.UIAxes,t(fitrange_a),polyval(pft_a,t(fitrange_a)),'k');
+        htry(3) = plot(app.UIAxes,t(ix),polyval(pft_b,t(ix)),'*r');
+      else
+        pf_b = polyfit(fitrange_b,f(fitrange_b),1);
+        pf_a = polyfit(fitrange_a,f(fitrange_a),1);
+        htry(1) = plot(app.UIAxes,fitrange_b,polyval(pf_b,fitrange_b),'k');
+        htry(2) = plot(app.UIAxes,fitrange_a,polyval(pf_a,fitrange_a),'k');
+        htry(3) = plot(app.UIAxes,ix,polyval(pf_b,ix),'*r');
+      end
+      answer = questdlg('Satisfied?');
+      if ~strcmp(answer,'Yes')
+        delete(htry);
+        return
+      end
+      pfx_b = polyfit(x(fitrange_b),f(fitrange_b),1);
+      pfx_a = polyfit(x(fitrange_a),f(fitrange_a),1);
+      % Create new rip/zip struct
+      new.file = fullfile(app.Datafolder,app.Datafile);
+      new.t = t(rng);
+      new.x = x(rng);
+      new.f = f(rng);
+      new.T = app.filedata.T(rng);
+      new.force = polyval(pft_b,t(ix));
+      new.time = t(ix);
+      new.ripx = x(ix);      
+      xend = (new.force-pfx_a(2))/pfx_a(1);
+      new.deltax = xend - new.ripx; 
+      new.fdot = pft_b(1);
+      new.rip_index = ix - rng(1) +1;
+      new.fstep = polyval(pft_b,t(new.rip_index))-polyval(pft_a,t(new.rip_index));
+      new.pfx_b = pfx_b;
+      new.pfx_a = pfx_a;
+      new.dt = mean(diff(new.t));
+      new.temperature = app.filedata.T(ix);     
+      new.noise = std(f(fitrange_b)-polyval(pft_b,t(fitrange_b)));
+      new.fitrange = [fitrange_b(1),fitrange_a(end)];       
+      new.pullingspeed = median(diff(new.x)./diff(new.t));
+      new.cycleno = app.cycleno;
+      new.topforce = max(new.f);
+      new.work = Crooks_work(new.force,new.deltax,new.temperature,app.par);
+    end
+
+    function s = table2tracestruct(app,T,row,sgn)
+      % Create a trace struct for the current file from a results table row
+      if row == 0  % Create empty struct with all fields
+        s.file = [];
+        s.t = [];
+        s.f = [];
+        s.x = [];
+        s.T = [];
+        s.ripx   = [];
+        s.force  = [];
+        s.fstep  = [];
+        s.deltax = [];
+        s.time   = [];
+        s.fdot   = [];
+        s.rip_index = [];
+        s.dt     = [];
+        s.temperature = [];
+        s.noise  = [];
+        s.fitrange = [];
+        s.pullingspeed = [];
+        s.pfx_b = [];
+        s.pfx_a = [];
+        s.cycleno = [];
+        s.topforce = [];
+        s.work = [];
+        return
+      end
+
+      s.file = app.Datafile;
+      shortname = shorten_filename(s.file,2);
+      if ~isequal(shorten_filename(T.Filename(row)),shortname)
+        warning('Results file does not match the current file')
+      end
+
+      ix = find(app.filedata.t == T.Time(row));
+      if sgn > 0
+        trace_start = app.filedata.valleypos(find(app.filedata.valleypos<ix,1,'last'));
+        trace_stop = app.filedata.peakpos(find(app.filedata.peakpos>ix,1));
+      else
+        trace_start = app.filedata.peakpos(find(app.filedata.peakpos<ix,1,'last'));
+        trace_stop = app.filedata.valleypos(find(app.filedata.valleypos>ix,1));
+      end
+      range = valid_trace_part(app.filedata.f(trace_start:trace_stop),sgn) ...
+        + trace_start -1;
+      s.t = app.filedata.t(range);
+      s.f = app.filedata.f(range);
+      s.x = app.filedata.x(range);
+      s.T = app.filedata.T(range);
+
+      s.ripx = T.Trapx(row);
+      s.force = T.Force(row);
+      s.fstep = T.Forceshift(row);
+      s.deltax = T.Deltax(row);
+      s.time = T.Time(row);
+      s.fdot = T.Fdot(row);
+      s.rip_index = ix - range(1) +1;
+      s.dt = T.Timestep(row);
+      s.temperature = T.Temperature(row);
+      s.noise = T.Noise(row);
+      s.fitrange = T.Fitrange(row);
+      s.pullingspeed = T.Pullingspeed(row);
+      s.cycleno = T.Cycleno(row);
+      s.topforce = T.Topforce(row);
+      s.work = T.Work(row);      
+
+
+      % fitting range before rip/zip
+      nf = numel(range);
+      fitb_start = max(ix - round(app.par.maxfitfraction*nf),range(1));
+      fitrange_b = fitb_start:ix;
+      s.pfx_b = polyfit(app.filedata.x(fitrange_b),app.filedata.f(fitrange_b),1);SelectCycle(app)
+      % fitting range after rip/zip
+      fita_stop = min(ix+2*app.par.ripsteps+round(app.par.maxfitfraction*nf),range(end));
+      fitrange_a = (ix +2*app.par.ripsteps):fita_stop;
+      s.pfx_a = polyfit(app.filedata.x(fitrange_a),app.filedata.f(fitrange_a),1);
+    end
+    
+    function SelectCycle(app)
+      k = app.CyclenoSpinner.Value;
+      t = app.filedata.t;
+      % f = app.filedata.f;
+      % x = app.filedata.x;
+      peakpos = app.filedata.peakpos;
+      valleypos = app.filedata.valleypos;       
+      pullfirst = app.PullrelaxButton.Value;
+      if pullfirst
+        kmax = numel(valleypos)-1;
+      else
+        kmax = numel(peakpos) -1;
+      end
+      if k < 1
+        k = 1;
+      elseif k > kmax
+        k = kmax;
+      end
+      app.CyclenoSpinner.Value = k;
+      app.allcyclesLabel.Text = sprintf('of %d',kmax);
+      app.cycleno = k;     
+      mark_cycle(app.UIAxes3,k,t,peakpos,valleypos,pullfirst); 
+      hold(app.UIAxes4,"off");
+      plot_cycle(app,app.UIAxes4,k);
+    end
+    
+    function plot_cycle(app,ax,k)     
+    % Plot force f vs trap position x for connected pull and relax traces   
+      t = app.filedata.t;
+      f = app.filedata.f;
+      x = app.filedata.x;
+      peakpos = app.filedata.peakpos;
+      valleypos = app.filedata.valleypos;       
+      pullfirst = app.PullrelaxButton.Value;
+
+      if ~isempty(app.traces.pull)
+        riptimes = vertcat(app.traces.pull.time); 
+      else
+        riptimes = 0;
+      end      
+      if ~isempty(app.traces.relax)
+        ziptimes = vertcat(app.traces.relax.time); 
+      else
+        ziptimes = 0;
+      end
+      peakfirst = valleypos(1)>peakpos(1);  
+      labels1 = [app.Trace1Label,app.Event1Label,app.t11Label,app.t12Label,app.t13Label,app.f1Label,app.dx1Label];
+      labels2 = [app.Trace2Label,app.Event2Label,app.t21Label,app.t22Label,app.t23Label,app.f2Label,app.dx2Label];
+      for i = 1:7
+        labels1(i).Text = '';
+        labels2(i).Text = '';
+      end
+      if pullfirst
+        % legtext = {'Pulling','Relaxing','Δx'};
+        pulllabels = labels1;
+        relaxlabels = labels2;
+        if peakfirst
+          pullrange = valleypos(k):peakpos(k+1);
+          relaxrange = peakpos(k+1)+1:valleypos(k+1);
+          pullno = find(t(valleypos(k))<riptimes & riptimes < t(peakpos(k+1)),1);
+          relaxno = find(t(peakpos(k+1))<ziptimes & ziptimes < t(valleypos(k+1)),1); %OK
+        else
+          pullrange = valleypos(k):peakpos(k);
+          relaxrange = peakpos(k)+1:valleypos(k+1);      
+          pullno = find(t(valleypos(k))<riptimes & riptimes < t(peakpos(k)),1);
+          relaxno = find(t(peakpos(k))<ziptimes & ziptimes < t(peakpos(k+1)),1);          
+        end   
+      else
+        % legtext = {'Relaxing','Pulling','Δx'};
+        pulllabels = labels2;
+        relaxlabels = labels1;        
+        if peakfirst
+          relaxrange = peakpos(k)+1:valleypos(k);
+          pullrange = valleypos(k):peakpos(k+1);  
+          pullno = find(t(valleypos(k))<riptimes & riptimes < t(peakpos(k+1)),1);
+          relaxno = find(t(peakpos(k))<ziptimes & ziptimes < t(valleypos(k)),1);          
+        else
+          relaxrange = peakpos(k)+1:valleypos(k+1);  
+          pullrange = valleypos(k+1):peakpos(k+1);    
+          pullno = find(t(valleypos(k+1))<riptimes & riptimes < t(peakpos(k+1)),1);
+          relaxno = find(t(peakpos(k))<ziptimes & ziptimes < t(valleypos(k+1)),1);     %OK      
+        end
+
+      end
+      cla(ax,'reset');
+      zoom(ax,"on");
+      % Reset h2 and HideTracesButtonGroup
+      app.h2 = zeros(2,4);
+      app.RelaxButton.Value = 0;
+      app.PullButton.Value = 0;
+      app.BothButton.Value = 1;
+
+      app.h2(1,1) = plot(ax,x(pullrange),f(pullrange),'r');
+      hold(ax,"on");
+      pulllabels(1).Text="Pulling trace";
+      if ~isempty(pullno)
+        pull = app.traces.pull(pullno);
+        startx = pull.x(1);
+        endx = pull.x(end);
+        ripx = pull.ripx;        
+        fitlength = (endx-startx)/10;
+        fitx = [max(startx,ripx-fitlength),min(endx,ripx+fitlength)];
+        app.h2(1,2:4) = plot(ax,ripx+[0,pull.deltax],pull.force+[0,0],'-ok', ...
+          fitx,polyval(pull.pfx_b,fitx),'k', ...
+          fitx,polyval(pull.pfx_a,fitx),'k');
+
+        pulllabels(2).Text="Rip";
+        pulllabels(3).Text=sprintf('%.1fs',pull.t(1));
+        pulllabels(4).Text=sprintf('%.1fs',pull.time);
+        pulllabels(5).Text=sprintf('%.1fs',pull.t(end));
+        pulllabels(6).Text=sprintf('%.1fpN',pull.force);
+        pulllabels(7).Text=sprintf('%.1fnm',pull.deltax);
+      else
+        pulllabels(3).Text=sprintf('%.1fs',t(pullrange(1)));
+        pulllabels(5).Text=sprintf('%.1fs',t(pullrange(end)));
+      end
+      relaxlabels(1).Text="Relaxing trace";
+      % To make sure the pull and relax x values match at high force:
+      % shift x values for the relax trace by xshift
+      xshift = x(pullrange(end))-x(relaxrange(1));
+      xrelax = x(relaxrange) + xshift;
+      % plot(ax,x(relaxrange),f(relaxrange),'b'); 
+      app.h2(2,1) = plot(ax,xrelax,f(relaxrange),'b');
+      if ~isempty(relaxno)
+        relax = app.traces.relax(relaxno);
+        startx = relax.x(1) + xshift;
+        endx = relax.x(end) + xshift;
+        ripx = relax.ripx + xshift;
+        fitlength = (startx-endx)/10;
+        fitx = [min(ripx+fitlength,startx),max(ripx-fitlength,endx)];
+        % plot(ax,ripx,relax.force,'ok',ripx+[0,relax.deltax], ...
+        app.h2(2,2:4) = plot(ax,ripx+[0,relax.deltax],relax.force+[0,0],'-ok', ...
+          fitx+xshift,polyval(relax.pfx_b,fitx),'k', ...
+          fitx+xshift,polyval(relax.pfx_a,fitx),'k');
+        relaxlabels(2).Text="Zip";
+        relaxlabels(3).Text=sprintf('%.1fs',relax.t(1));
+        relaxlabels(4).Text=sprintf('%.1fs',relax.time);
+        relaxlabels(5).Text=sprintf('%.1fs',relax.t(end));   
+        relaxlabels(6).Text=sprintf('%.1fpN',relax.force);
+        relaxlabels(7).Text=sprintf('%.1fnm',relax.deltax); 
+      else
+        relaxlabels(3).Text=sprintf('%.1fs',t(relaxrange(1)));
+        relaxlabels(5).Text=sprintf('%.1fs',t(relaxrange(end)));
+      end
+      xlabel(ax,'Trap x (nm)')
+      ylabel(ax,'Force (pN)')
+      box(ax,"on");
+
+      zoom(ax,"on");
+      % hold(ax,"off");
+      for k = 1:8
+        if app.h2(k) ~= 0
+          set(app.h2(k),'Visible','on');
+        end
+      end       
+    end
+    
+    function plot_many_cycles(app)
+      t0 = app.StarttimeEditField.Value;
+      [~,startcycle] = min(abs(t0-app.filedata.t(app.filedata.valleypos)));
+      pos1 = app.filedata.valleypos(startcycle);
+      t1 = app.filedata.t(pos1);
+      no_cycles = app.NumberofcyclesEditField.Value;
+      lastvalley = min(startcycle + no_cycles,numel(app.filedata.valleypos));
+      pos2 = app.filedata.valleypos(lastvalley);
+      t2 = app.filedata.t(pos2);
+      if isfield(app.h3,'region')
+        delete(app.h3.region);
+      end
+      app.h3.region = xregion(app.UIAxes6,t1,t2);
+      shift = app.CyclespacingnmEditField.Value;
+      plot_traces(app,app.UIAxes5,startcycle:lastvalley-1,shift);
+    end
+    
+    function plot_traces(app,ax,klist,shift)
+      t = app.filedata.t;
+      f = app.filedata.f;
+      x = app.filedata.x;
+      peakpos = app.filedata.peakpos;
+      valleypos = app.filedata.valleypos;  
+      peakfirst = valleypos(1)>peakpos(1); 
+      cla(ax);
+      hold(ax,'on')
+      for i = 1:numel(klist)
+        if peakfirst
+          pullrange = valleypos(klist(i)):peakpos(klist(i)+1);
+          relaxrange = peakpos(klist(i)+1)+1:valleypos(klist(i)+1);
+        else
+          pullrange = valleypos(klist(i)):peakpos(klist(i));
+          relaxrange = peakpos(klist(i))+1:valleypos(klist(i)+1);              
+        end
+        % Make sure x values match at top
+        xpull = x(pullrange);
+        xrelax = x(relaxrange);
+        xrelax = xrelax + xpull(end)-xrelax(1);
+        plot(ax,xpull+shift*(i-1),f(pullrange),'r');
+        plot(ax,xrelax+shift*(i-1),f(relaxrange),'b');
+      end
+      xlabel(ax,'x');ylabel('Force');
+      tstart = t(valleypos(klist(1)));
+      tstop = t(valleypos(klist(i)+1));
+      title(ax,sprintf('%.1fs < t < %.1fs',tstart,tstop))
+    end
+  end
+
+%*****************************************************************'''  
+
+  % Callbacks that handle component events
+  methods (Access = private)
+
+    % Code that executes after component creation
+    function startupFcn(app, riplabels)
+      app.UIFigure.Name = 'Rip analysis';
+      app.par = params;
+      app.settings = [];
+
+      if exist("RipAnalysis_settings.mat",'file')
+        load RipAnalysis_settings appsettings
+        app.settings = appsettings;
+      else
+        return
+      end
+      field_present(1) = isfield( appsettings,'Datafolder');
+      field_present(3) = isfield( appsettings,'Datafile');
+      field_present(2) = isfield( appsettings,'Outputfolder');
+
+      if field_present(1) && exist(appsettings.Datafolder,"dir")
+        app.Datafolder =  strrep(appsettings.Datafolder,'\','/');
+        app.DatafolderTextArea.Value = app.Datafolder;
+      end
+
+      if field_present(2) % &  exist(app.Outputfolder,"dir")
+        app.Outputfolder = appsettings.Outputfolder;
+        app.OutputfolderTextArea.Value = app.Outputfolder;
+      end
+
+      if field_present(3)
+        % fields_ok = fields_ok & ~isempty(appsettings.Datafile);
+        % fields_ok = fields_ok & exist(fullfile(appsettings.Datafolder, ...
+        %   appsettings.Datafile),"file");
+        app.Datafile =  appsettings.Datafile;
+        app.DatafileTextArea.Value = app.Datafile;
+        app.fileno = appsettings.Fileno;
+        app.Datafile = app.DatafileTextArea.Value;
+        if field_present(2)
+          read_experiment(app);
+          if isempty(app.traces.pull)
+            uialert(app.UIFigure,'No episodes found in file','Bad file')
+            return
+          end
+        end
+      end
+
+      if exist(fullfile(app.Datafolder,"Filelist.m"),"file")
+        app.UseFilelistmCheckBox.Visible = 'on';
+      end    
+      
+      % if field_present(1) && field_present(2)  % Datafile exists
+      %   read_experiment(app);
+      %   if isempty(app.traces.pull)
+      %     uialert(app.UIFigure,'No episodes found in file','Bad file')
+      %     return
+      %   end
+
+    end
+
+    % Button pushed function: SelectfolderButton
+    function SelectfolderButtonPushed(app, event)
+      folder = uigetdir(app.Datafolder);
+      if folder == 0
+        return   % User pressed "Cancel"
+      end
+      folder = strrep(folder,'\','/');  % Mac/Unix format
+      app.Datafolder = folder;
+      app.settings.Datafolder = folder;
+      appsettings = app.settings;
+      save RipAnalysis_settings appsettings
+      app.DatafolderTextArea.Value = app.Datafolder;
+      if exist(fullfile(app.Datafolder,"Filelist.m"),"file")
+        app.UseFilelistmCheckBox.Visible = 'on';
+      else
+        app.UseFilelistmCheckBox.Visible = 'off';
+      end       
+    end
+
+    % Button pushed function: SelectfileButton
+    function SelectfileButtonPushed(app, event)
+      % Read current datafile parts
+      subfolder = '';
+      filename = app.DatafileTextArea.Value;
+      if iscell(filename)  % Selected using the 'Select file' button
+        filename = filename{1};
+      end
+      if ~isempty(filename)
+        fileparts = split(filename,'/');
+        if numel(fileparts) > 1
+          subfolder = [fileparts{1},'/'];
+        end
+        [file,path] = uigetfile(strcat(app.settings.Datafolder,"/",subfolder,'{"*.txt";"*.m"}'));
+      else
+        [file,path] = uigetfile(strcat(app.Datafolder,'\'));
+      end
+      if file == 0
+        return  % User pressed "Cancel"
+      end 
+      [~,~,ext] = fileparts(string(app.Datafile));
+      switch ext
+        case ".m"
+          run(fullfile(path,file));
+          app.filelist = list_of_files;
+        case ".txt"
+          % Ensure path is a character array with Unix/Mac delimiters (/)
+          path = char(path);
+          path = strrep(path,'\','/');  
+          % Find element (from end) where path and app.datafolder differ
+          k = strfind(flip(path),flip(app.Datafolder));
+          if isempty(k)
+            msgbox('To select a file from a different data folder, Change the Data Dolder first')
+            return
+          end
+          shortname = strcat(path(end-k+3:end),file); 
+          file = shortname;
+          app.Datafile = file;
+          app.settings.Datafile = file;      % For storing in RipAnalysis_settings
+          app.DatafileTextArea.Value = app.Datafile; % Show name in app
+          appsettings = app.settings;
+          save RipAnalysis_settings appsettings
+          cla(app.UIAxes);  
+          read_experiment(app);
+          if isempty(app.traces.pull)
+            uialert(app.UIFigure,'No rips found in file','Bad file')
+            return
+          end
+          plot_file(app,app.UIAxes);
+      end
+    end
+
+    % Button pushed function: RestoreviewButton
+    function RestoreviewButtonPushed(app, event)
+      app.RemoveripszipsButton.Visible = "on";
+      app.SaveButton.Visible = "on";
+      app.UIAxes.Visible = "on";
+      app.RecallsavedchangesButton.Visible = "on";
+      app.yaxisButtonGroup.Visible = "on";
+      app.AddripzipButton.Visible = "on";
+      % app.InspectripzipButton.Visible = "on";
+      app.RemoveintervalLabel.Visible = "on";
+      app.AtendButton.Visible = "on";
+      app.AtbeginningButton.Visible = "on";
+
+      % if numel(app.h)>2 & isfield(app.h(3),'legend')
+      %   delete(app.h(3).legend)
+      % end
+      % cla(app.UIAxes2);
+      % app.UIAxes2.Visible = "off";
+      % app.UIAxes2.Toolbar.Visible = "off";
+      app.UIAxes.Visible = "on";
+      % axtoolbar(app.UIAxes2);  % remove axis toolbar
+      axtoolbar(app.UIAxes,{'default'});
+      plot_file(app,app.UIAxes);
+    end
+
+    % Button pushed function: RemoveripszipsButton
+    function RemoveripszipsButtonPushed(app, event)
+      [localrips,localzips,visiblerips,visiblezips] = ...
+        selectrip(app,'Multiple');
+      rips = visiblerips(localrips);
+      zips = visiblezips(localzips);
+      if isempty(localrips) & isempty(localzips)
+        return
+      end
+      txt = '';
+      if ~isempty(localrips)
+        txt = 'rips ';
+      end
+      for rno = 1:numel(localrips)
+        txt = [txt, num2str(localrips(rno)), ' '];
+      end
+      if ~isempty(txt) & ~isempty(zips)
+        txt = [txt,'and'];
+      end
+      if ~isempty(localzips)
+        txt = [txt,' zips '];
+      end
+      for rno = 1:numel(localzips)
+        txt = [txt, num2str(localzips(rno)), ' '];
+      end
+      quest = ['Do you really want to remove ',txt,'?'];
+      answer = questdlg(quest);
+
+      if answer == "Yes"
+        % Delete trace structs
+        for i = 1:numel(rips)
+          app.traces.pull(visiblerips(localrips(i))) = [];
+        end
+        for i = 1:numel(localzips)
+          app.traces.relax(visiblezips(localzips(i))) = [];
+        end
+        cla(app.UIAxes);
+        plot_file(app,app.UIAxes);
+      end
+    end
+
+    % Button pushed function: RecallsavedchangesButton
+    function RecallsavedchangesButtonPushed(app, event)
+
+      outputfile = fullfile(app.Outputfolder, ...
+        strrep(app.Datafile,".txt",".mat"));
+      if ~exist(outputfile,'file')
+        msgbox(sprintf("Results file %s not found",outputfile))
+        return
+      end
+      load(outputfile,'Trip','Tzip','limits');
+
+      app.traces.pull = table2tracestruct(app,Trip,0,1);
+      % Add new rips from table:
+      for row = 1:height(Trip)
+        app.traces.pull(row) = table2tracestruct(app,Trip,row,1);
+      end
+      app.traces.relax = table2tracestruct(app,Tzip,0,-1);
+      for row = 1:height(Tzip)
+        app.traces.relax(row) = table2tracestruct(app,Tzip,row,-1);
+      end
+      app.filedata.limits = limits;
+      ok = app.filedata.peakpos>app.filedata.limits(1) & ...
+        app.filedata.peakpos<app.filedata.limits(2);
+      app.filedata.peakpos = app.filedata.peakpos(ok);
+      ok = app.filedata.valleypos>app.filedata.limits(1) & ...
+        app.filedata.valleypos<app.filedata.limits(2);
+      app.filedata.valleypos = app.filedata.valleypos(ok);       
+      plot_file(app,app.UIAxes)
+    end
+
+    % Button pushed function: SaveButton
+    function SaveButtonPushed(app, event)
+      % msgbox('The results will be saved as Matlab tables Trip and Tzip')
+      if ~isfield(app.settings,'Outputfolder')
+        waitfor(msgbox('Please select a folder for output files'));
+        folder = strrep(uigetdir,'\','/');  % Convert to Unix format
+        if folder == 0
+          return   % User pressed "Cancel"
+        end
+        app.Outputfolder = folder;
+        app.settings.Outputfolder = folder;
+        appsettings = app.settings;
+        save RipAnalysis_settings appsettings
+      end
+      Trip = create_table(app.traces.pull);  % Rip table
+      Tzip = create_table(app.traces.relax);  % Zip table
+      parts = strsplit(app.Datafile,"/");
+      nparts = numel(parts);
+      folder = string(app.Outputfolder);
+      if nparts > 1
+        for i = 1:nparts-1
+          folder = fullfile(folder,parts(i));
+          if ~exist(folder,"dir")
+            mkdir(folder);
+          end
+        end
+      end
+      matfile = fullfile(app.Outputfolder,strrep(app.Datafile,'.txt','.mat'));
+      excelfile = fullfile(app.Outputfolder,strrep(app.Datafile,'.txt','.xlsx'));
+      limits = app.filedata.limits;  % Axis limits
+      % Save only rips and zips inside limits:
+      Trip = Trip(Trip.Time > app.filedata.t(limits(1)) & ...
+        Trip.Time < app.filedata.t(limits(2)),:);
+      Tzip = Tzip(Tzip.Time > app.filedata.t(limits(1)) & ...
+        Tzip.Time < app.filedata.t(limits(2)),:);
+      save(matfile,'Trip','Tzip','limits');
+      msgtext = sprintf("Results tables saved to %s",matfile);
+      try
+        writetable(Trip,excelfile,'Sheet','Rips');
+        writetable(Tzip,excelfile,'Sheet','Zips');
+        msgtext(2) = sprintf("Results tables saved to %s",excelfile);
+      catch
+        msgtext(2) = sprintf('UNABLE TO WRITE to %s',excelfile);
+      end  
+      msgbox(msgtext);
+    end
+
+    % Value changed function: DatafolderTextArea
+    function DatafolderTextAreaValueChanged(app, event)
+      folder = app.DatafolderTextArea.Value;
+      if iscell(folder)
+        folder = folder{1};
+      end
+      if ismember('\',folder)
+        folder = strrep(folder,'\','/');
+        app.DatafolderTextArea.Value = folder;
+      end
+      app.Datafolder = folder;
+      app.settings.Datafolder = folder;
+      appsettings = app.settings;
+      save RipAnalysis_settings appsettings
+      if exist(fullfile(app.Datafolder,"Filelist.m"),"file")
+        app.UseFilelistmCheckBox.Visible = 'on';
+      else
+        app.UseFilelistmCheckBox.Visible = 'off';
+      end       
+    end
+
+    % Value changed function: DatafileTextArea
+    function DatafileTextAreaValueChanged(app, event)
+      file = app.DatafileTextArea.Value;
+      if iscell(file)
+        file = file{1};
+      end
+      if isempty(file)
+        return
+      end
+      if isprop(app,'filelist')
+        index = str2double(file);
+        if ~isnan(index) && round(index) <= length(app.filelist)
+          file = app.filelist(index);
+          app.DatafileTextArea.Value = file;
+        end
+      end
+      app.settings.Datafile = file;
+      app.Datafile = file;
+      appsettings = app.settings;
+      save RipAnalysis_settings appsettings
+      read_experiment(app);
+      plot_file(app,app.UIAxes);
+    end
+
+    % Button pushed function: SelectfolderButton_2
+    function SelectfolderButton_2Pushed(app, event)
+      folder = uigetdir(app.Outputfolder);
+      if folder == 0
+        return   % User pressed "Cancel"
+      end
+      app.Outputfolder = strrep(folder,'\','/');
+      app.settings.Outputfolder = folder;
+      appsettings = app.settings;
+      save RipAnalysis_settings appsettings
+      app.OutputfolderTextArea.Value = app.Outputfolder;
+    end
+
+    % Selection changed function: xaxisButtonGroup
+    function xaxisButtonGroupSelectionChanged(app, event)
+      limx = xlim(app.UIAxes);
+      if app.RecordButton.Value
+        % Find record no range from plot t limits
+        [~,r1] = min(abs(app.filedata.t-limx(1)));
+        [~,r2] = min(abs(app.filedata.t-limx(2)));
+        plot_file(app,app.UIAxes,[r1,r2]);
+      else
+        % Find t range from record plot range
+        plot_file(app,app.UIAxes,app.filedata.t(limx));
+      end      
+      % plot_file(app,app.UIAxes);
+    end
+
+    % Button pushed function: AtbeginningButton
+    function AtbeginningButtonPushed(app, event)
+      setlimit(app,'Start');
+    end
+
+    % Button pushed function: AtendButton
+    function AtendButtonPushed(app, event)
+      setlimit(app,'End')
+    end
+
+    % Button pushed function: AddripzipButton
+    function AddripzipButtonPushed(app, event)
+      % ***********************************************
+      % Cast magic spell to make ginput crosshairs apppear in App window:
+      fhv = app.UIFigure.HandleVisibility;        % Current state
+      app.UIFigure.HandleVisibility = 'callback'; % Temporarily make UIFigure handle visible outside app
+      set(0, 'CurrentFigure', app.UIFigure);
+      answer = 'No';
+      while strcmp(answer,'No')
+        [answer,new,sgn] = tryrip(app);
+      end
+      app.UIFigure.HandleVisibility = fhv;
+      % Magic spell lifted
+      % ***********************************************
+      if ~strcmp(answer,'Yes')  % User selected 'Cancel'
+        return
+      end
+      % New rip/zip accepted. Insert in app.traces
+      if sgn > 0  % Pull trace
+        if isempty(app.traces.pull)
+          app.traces.pull = new;
+        else
+          times = vertcat(app.traces.pull.time);
+          if new.time < times(1)
+            app.traces.pull = [new;app.traces.pull];
+          else
+            index = find(times>new.time,1);
+            if isempty(index)  % add new at end
+              app.traces.pull = [app.traces.pull;new];
+            else
+              ntraces = length(times);
+              app.traces.pull(index+1:ntraces+1) = app.traces.pull(index:ntraces);
+              app.traces.pull(index) = new;
+            end
+          end
+        end
+      else
+        if isempty(app.traces.relax)
+          app.traces.relax = new;
+        else
+          times = vertcat(app.traces.relax.time);
+          if new.time < times(1)
+            app.traces.relax = [new;app.traces.relax];
+          else
+            index = find(times>new.time,1);
+            if isempty(index)  % add new at end
+              app.traces.relax = [app.traces.relax;new];
+            else
+              ntraces = length(times);
+              app.traces.relax(index+1:ntraces+1) = app.traces.relax(index:ntraces);
+              app.traces.relax(index) = new;
+            end
+          end
+        end
+      end
+      plot_file(app,app.UIAxes);
+    end
+
+    % Selection changed function: yaxisButtonGroup
+    function yaxisButtonGroupSelectionChanged(app, event)
+      % selectedButton = app.yaxisButtonGroup.SelectedObject;
+      limx = xlim(app.UIAxes);
+      plot_file(app,app.UIAxes,limx);
+    end
+
+    % Selection change function: TabGroup
+    function TabGroupSelectionChanged(app, event)
+      selectedTab = app.TabGroup.SelectedTab;
+      if selectedTab.Title == "Single f vs x traces"
+        plot_file(app,app.UIAxes3)
+        app.CyclenoSpinner.Value = 1;
+        SelectCycle(app);
+      end
+      if selectedTab.Title == "Multiple f vs x traces"
+        plot_file(app,app.UIAxes6)
+        plot_many_cycles(app)
+      end      
+    end
+
+    % Value changed function: CyclenoSpinner
+    function CyclenoSpinnerValueChanged(app, event)
+      % value = app.CyclenoSpinner.Value;
+      SelectCycle(app)
+    end
+
+    % Selection changed function: CycletypeButtonGroup
+    function CycletypeButtonGroupSelectionChanged(app, event)
+      % selectedButton = app.CycletypeButtonGroup.SelectedObject;
+      SelectCycle(app)
+    end
+
+    % Button pushed function: ExportfigureButton
+    function ExportfigureButtonPushed(app, event)
+      limx = xlim(app.UIAxes);
+      limy = ylim(app.UIAxes);
+      figure;
+      plot_file(app,gca)
+      xlim(gca,limx);
+      ylim(gca,limy);
+    end
+
+    % Button pushed function: ExportfigureButton_2
+    function ExportfigureButton_2Pushed(app, event)
+      k = app.CyclenoSpinner.Value;
+      t = app.filedata.t;
+      % f = app.filedata.f;
+      % x = app.filedata.x;
+      peakpos = app.filedata.peakpos;
+      valleypos = app.filedata.valleypos;       
+      pullfirst = app.RelaxpullButton.Value;
+
+      % peakfirst = valleypos(1)>peakpos(1); 
+      if pullfirst
+        if k < numel(valleypos)
+          t1 = t(valleypos(k));
+          t2 = t(valleypos(k+1));
+        else
+          return;
+        end
+      else
+        if k < numel(peakpos)
+          t1 = t(peakpos(k));
+          t2 = t(peakpos(k+1));
+        else
+          return;
+        end
+      end
+
+      limx = xlim(app.UIAxes4);
+      limy = ylim(app.UIAxes4);
+      figure;
+      plot_cycle(app,gca,k);
+      xlim(limx);
+      ylim(limy);
+      title(sprintf('%s   %.1fs< t <%.1fs',app.Datafile,t1,t2))
+    end
+
+    % Value changed function: OutputfolderTextArea
+    function OutputfolderTextAreaValueChanged(app, event)
+      value = app.OutputfolderTextArea.Value;
+      app.Outputfolder = value{1};
+      app.settings.Outputfolder = value{1};
+      appsettings = app.settings;
+      save RipAnalysis_settings appsettings
+    end
+
+    % Selection changed function: ShowtracesButtonGroup
+    function ShowtracesButtonGroupSelectionChanged(app, event)
+      selectedButton = app.ShowtracesButtonGroup.SelectedObject;
+      switch selectedButton.Text
+        case 'Both'
+          for k = 1:8
+            if app.h2(k) ~= 0
+              set(app.h2(k),'Visible','on');
+            end
+          end
+        case 'Pull'
+          for k = 1:4
+            if app.h2(1,k) ~= 0
+              set(app.h2(1,k),'Visible','on');
+            end
+            if app.h2(2,k) ~= 0
+              set(app.h2(2,k),'Visible','off');
+            end
+          end
+        case 'Relax'
+          for k = 1:4
+            if app.h2(1,k) ~= 0
+              set(app.h2(1,k),'Visible','off');
+            end
+            if app.h2(2,k) ~= 0
+              set(app.h2(2,k),'Visible','on');
+            end
+          end
+      end
+    end
+
+    % Value changed function: CyclespacingnmEditField
+    function CyclespacingnmEditFieldValueChanged(app, event)
+      % value = app.CyclespacingnmEditField.Value;
+      app.plot_many_cycles;
+    end
+
+    % Value changed function: NumberofcyclesEditField
+    function NumberofcyclesEditFieldValueChanged(app, event)
+      % value = app.NumberofcyclesEditField.Value;
+      app.plot_many_cycles;
+    end
+
+    % Value changed function: StarttimeEditField
+    function StarttimeEditFieldValueChanged(app, event)
+      % value = app.StarttimeEditField.Value;
+      app.plot_many_cycles;
+    end
+
+    % Button pushed function: ExportgraphButton
+    function ExportgraphButtonPushed(app, event)
+      t0 = app.StarttimeEditField.Value;
+      [~,startcycle] = min(abs(t0-app.filedata.t(app.filedata.valleypos)));
+      no_cycles = app.NumberofcyclesEditField.Value;
+      lastvalley = min(startcycle + no_cycles,numel(app.filedata.valleypos));
+      shift = app.CyclespacingnmEditField.Value;
+      figure;
+      app.plot_traces(gca,startcycle:lastvalley-1,shift);
+      ax = gca;
+      ttl = ax.Title.String;
+      title(sprintf('%s: %s',app.Datafile,ttl))
+    end
+
+    % Callback function
+    function NextfileButtonPushed(app, event)
+      if app.fileno < length(app.filelist)
+        app.fileno = app.fileno+1;
+        app.Datafile = app.filelist(app.fileno);
+        app.DatafileTextArea.Value = app.Datafile;
+        app.settings.Datafile = app.Datafile;      % For storing in RipAnalysis_settings
+        app.DatafileTextArea.Value = app.Datafile; % Show name in app
+        appsettings = app.settings;
+        save RipAnalysis_settings appsettings
+        cla(app.UIAxes);  
+        read_experiment(app);
+        if isempty(app.traces.pull)
+          uialert(app.UIFigure,'No rips found in file','Bad file')
+          return
+        end
+        plot_file(app,app.UIAxes);
+
+      end
+    end
+
+    % Callback function
+    function FilelistindexSpinnerValueChanged(app, event)
+      value = app.FilelistindexSpinner.Value;
+      if value < 1
+        app.FilelistindexSpinner.Value = 1;
+      elseif value > length(app.filelist)
+        app.FilelistindexSpinner.Value = length(app.filelist);
+      else
+        app.fileno = value;
+        app.Datafile = app.filelist(app.fileno);
+        % app.DatafileTextArea.Value = app.Datafile;
+        app.settings.Datafile = app.Datafile;      % For storing in RipAnalysis_settings
+        app.DatafileTextArea.Value = app.Datafile; % Show name in app
+        app.FilelistindexSpinner.Value = app.fileno;
+        appsettings = app.settings;
+        save RipAnalysis_settings appsettings
+        cla(app.UIAxes);  
+        read_experiment(app);
+        if isempty(app.traces.pull)
+          uialert(app.UIFigure,'No rips found in file','Bad file')
+          return
+        end
+        plot_file(app,app.UIAxes);      
+      end
+    end
+
+    % Value changed function: FilelistindexSpinner
+    function FilelistindexSpinnerValueChanged2(app, event)
+      value = app.FilelistindexSpinner.Value;
+      if value < 1
+        app.FilelistindexSpinner.Value = 1;
+      elseif value > length(app.filelist)
+        app.FilelistindexSpinner.Value = length(app.filelist);
+      else
+        app.fileno = value;
+        app.Datafile = app.filelist(app.fileno);
+        % app.DatafileTextArea.Value = app.Datafile;
+        app.settings.Datafile = app.Datafile;      % For storing in RipAnalysis_settings
+        app.DatafileTextArea.Value = app.Datafile; % Show name in app
+        app.FilelistindexSpinner.Value = app.fileno;
+        appsettings = app.settings;
+        save RipAnalysis_settings appsettings
+        cla(app.UIAxes);  
+        read_experiment(app);
+        if isempty(app.traces.pull)
+          uialert(app.UIFigure,'No rips found in file','Bad file')
+          return
+        end
+        plot_file(app,app.UIAxes);      
+      end   
+    end
+
+    % Value changed function: UseFilelistmCheckBox
+    function UseFilelistmCheckBoxValueChanged(app, event)
+      value = app.UseFilelistmCheckBox.Value;
+      if value
+        run(fullfile(app.Datafolder,"Filelist.m"));
+        app.filelist = files;
+        app.FilelistindexLabel.Visible = "on";
+        app.FilelistindexSpinner.Visible = "on";
+        app.FilelistindexSpinner.Value = app.fileno;
+      else
+        app.FilelistindexLabel.Visible = "off";
+        app.FilelistindexSpinner.Visible = "off";   
+      end
+    end
+  end
+
+  % Component initialization
+  methods (Access = private)
+
+    % Create UIFigure and components
+    function createComponents(app)
+
+      % Create UIFigure and hide until all components are created
+      app.UIFigure = uifigure('Visible', 'off');
+      app.UIFigure.Position = [10 30 955 650];
+      app.UIFigure.Name = 'MATLAB App';
+
+      % Create TabGroup
+      app.TabGroup = uitabgroup(app.UIFigure);
+      app.TabGroup.SelectionChangedFcn = createCallbackFcn(app, @TabGroupSelectionChanged, true);
+      app.TabGroup.Position = [-1 4 955 586];
+
+      % Create HomeTab
+      app.HomeTab = uitab(app.TabGroup);
+      app.HomeTab.Title = 'Home';
+
+      % Create UIAxes
+      app.UIAxes = uiaxes(app.HomeTab);
+      title(app.UIAxes, 'Title')
+      xlabel(app.UIAxes, 'X')
+      ylabel(app.UIAxes, 'Y')
+      zlabel(app.UIAxes, 'Z')
+      app.UIAxes.PlotBoxAspectRatio = [2.16872695727608 1 1];
+      app.UIAxes.Position = [166 25 672 364];
+
+      % Create SelectfolderButton
+      app.SelectfolderButton = uibutton(app.HomeTab, 'push');
+      app.SelectfolderButton.ButtonPushedFcn = createCallbackFcn(app, @SelectfolderButtonPushed, true);
+      app.SelectfolderButton.Position = [509 523 95 23];
+      app.SelectfolderButton.Text = 'Select folder';
+
+      % Create SelectfileButton
+      app.SelectfileButton = uibutton(app.HomeTab, 'push');
+      app.SelectfileButton.ButtonPushedFcn = createCallbackFcn(app, @SelectfileButtonPushed, true);
+      app.SelectfileButton.Position = [510 457 100 23];
+      app.SelectfileButton.Text = 'Select file';
+
+      % Create RestoreviewButton
+      app.RestoreviewButton = uibutton(app.HomeTab, 'push');
+      app.RestoreviewButton.ButtonPushedFcn = createCallbackFcn(app, @RestoreviewButtonPushed, true);
+      app.RestoreviewButton.Tooltip = {'Show f(t) for full file'};
+      app.RestoreviewButton.Position = [38 344 84 24];
+      app.RestoreviewButton.Text = 'Restore view';
+
+      % Create RecallsavedchangesButton
+      app.RecallsavedchangesButton = uibutton(app.HomeTab, 'push');
+      app.RecallsavedchangesButton.ButtonPushedFcn = createCallbackFcn(app, @RecallsavedchangesButtonPushed, true);
+      app.RecallsavedchangesButton.Tooltip = {'Read  data from output tables Trop and Tzip'};
+      app.RecallsavedchangesButton.Position = [18 151 132 24];
+      app.RecallsavedchangesButton.Text = 'Recall saved changes';
+
+      % Create SaveButton
+      app.SaveButton = uibutton(app.HomeTab, 'push');
+      app.SaveButton.ButtonPushedFcn = createCallbackFcn(app, @SaveButtonPushed, true);
+      app.SaveButton.FontWeight = 'bold';
+      app.SaveButton.Tooltip = {'Save resultstables Trip and Tzip to file'};
+      app.SaveButton.Position = [30 199 100 24];
+      app.SaveButton.Text = 'Save';
+
+      % Create SelectfolderButton_2
+      app.SelectfolderButton_2 = uibutton(app.HomeTab, 'push');
+      app.SelectfolderButton_2.ButtonPushedFcn = createCallbackFcn(app, @SelectfolderButton_2Pushed, true);
+      app.SelectfolderButton_2.Position = [509 492 100 23];
+      app.SelectfolderButton_2.Text = 'Select folder';
+
+      % Create AddripzipButton
+      app.AddripzipButton = uibutton(app.HomeTab, 'push');
+      app.AddripzipButton.ButtonPushedFcn = createCallbackFcn(app, @AddripzipButtonPushed, true);
+      app.AddripzipButton.Tooltip = {'Not implemented'};
+      app.AddripzipButton.Position = [33 248 91 24];
+      app.AddripzipButton.Text = 'Add rip/zip';
+
+      % Create xaxisButtonGroup
+      app.xaxisButtonGroup = uibuttongroup(app.HomeTab);
+      app.xaxisButtonGroup.SelectionChangedFcn = createCallbackFcn(app, @xaxisButtonGroupSelectionChanged, true);
+      app.xaxisButtonGroup.Title = 'x axis';
+      app.xaxisButtonGroup.Position = [719 475 100 71];
+
+      % Create TimesButton
+      app.TimesButton = uiradiobutton(app.xaxisButtonGroup);
+      app.TimesButton.Text = 'Time (s)';
+      app.TimesButton.Position = [11 25 65 22];
+      app.TimesButton.Value = true;
+
+      % Create RecordButton
+      app.RecordButton = uiradiobutton(app.xaxisButtonGroup);
+      app.RecordButton.Text = 'Record';
+      app.RecordButton.Position = [11 3 65 22];
+
+      % Create AtbeginningButton
+      app.AtbeginningButton = uibutton(app.HomeTab, 'push');
+      app.AtbeginningButton.ButtonPushedFcn = createCallbackFcn(app, @AtbeginningButtonPushed, true);
+      app.AtbeginningButton.Tooltip = {'Default: Beginning'};
+      app.AtbeginningButton.Position = [224 383 98 22];
+      app.AtbeginningButton.Text = 'At beginning';
+
+      % Create AtendButton
+      app.AtendButton = uibutton(app.HomeTab, 'push');
+      app.AtendButton.ButtonPushedFcn = createCallbackFcn(app, @AtendButtonPushed, true);
+      app.AtendButton.Tooltip = {'Default: end of file'};
+      app.AtendButton.Position = [332 384 93 22];
+      app.AtendButton.Text = 'At end';
+
+      % Create RemoveintervalLabel
+      app.RemoveintervalLabel = uilabel(app.HomeTab);
+      app.RemoveintervalLabel.Position = [130 383 95 22];
+      app.RemoveintervalLabel.Text = 'Remove interval:';
+
+      % Create yaxisButtonGroup
+      app.yaxisButtonGroup = uibuttongroup(app.HomeTab);
+      app.yaxisButtonGroup.SelectionChangedFcn = createCallbackFcn(app, @yaxisButtonGroupSelectionChanged, true);
+      app.yaxisButtonGroup.Title = 'y axis';
+      app.yaxisButtonGroup.Position = [620 457 100 89];
+
+      % Create fButton
+      app.fButton = uiradiobutton(app.yaxisButtonGroup);
+      app.fButton.Text = 'f';
+      app.fButton.Position = [11 43 58 22];
+      app.fButton.Value = true;
+
+      % Create xButton
+      app.xButton = uiradiobutton(app.yaxisButtonGroup);
+      app.xButton.Text = 'x';
+      app.xButton.Position = [11 21 65 22];
+
+      % Create TButton
+      app.TButton = uiradiobutton(app.yaxisButtonGroup);
+      app.TButton.Text = 'T';
+      app.TButton.Position = [11 -1 65 22];
+
+      % Create DatafolderTextArea_2Label
+      app.DatafolderTextArea_2Label = uilabel(app.HomeTab);
+      app.DatafolderTextArea_2Label.HorizontalAlignment = 'right';
+      app.DatafolderTextArea_2Label.Position = [19 520 64 22];
+      app.DatafolderTextArea_2Label.Text = 'Data folder';
+
+      % Create DatafolderTextArea
+      app.DatafolderTextArea = uitextarea(app.HomeTab);
+      app.DatafolderTextArea.ValueChangedFcn = createCallbackFcn(app, @DatafolderTextAreaValueChanged, true);
+      app.DatafolderTextArea.Position = [91 524 405 20];
+
+      % Create DatafileTextArea
+      app.DatafileTextArea = uitextarea(app.HomeTab);
+      app.DatafileTextArea.ValueChangedFcn = createCallbackFcn(app, @DatafileTextAreaValueChanged, true);
+      app.DatafileTextArea.Tooltip = {'*.txt or '; 'Filelist.m: (returns list of *-txt files'};
+      app.DatafileTextArea.Position = [91 459 406 20];
+
+      % Create OutputfolderTextArea_2Label
+      app.OutputfolderTextArea_2Label = uilabel(app.HomeTab);
+      app.OutputfolderTextArea_2Label.HorizontalAlignment = 'right';
+      app.OutputfolderTextArea_2Label.Position = [11 490 74 22];
+      app.OutputfolderTextArea_2Label.Text = 'Output folder';
+
+      % Create OutputfolderTextArea
+      app.OutputfolderTextArea = uitextarea(app.HomeTab);
+      app.OutputfolderTextArea.ValueChangedFcn = createCallbackFcn(app, @OutputfolderTextAreaValueChanged, true);
+      app.OutputfolderTextArea.Position = [92 492 405 20];
+
+      % Create RemoveripszipsButton
+      app.RemoveripszipsButton = uibutton(app.HomeTab, 'push');
+      app.RemoveripszipsButton.ButtonPushedFcn = createCallbackFcn(app, @RemoveripszipsButtonPushed, true);
+      app.RemoveripszipsButton.Position = [27 297 107 22];
+      app.RemoveripszipsButton.Text = 'Remove rips/zips';
+
+      % Create ExportfigureButton
+      app.ExportfigureButton = uibutton(app.HomeTab, 'push');
+      app.ExportfigureButton.ButtonPushedFcn = createCallbackFcn(app, @ExportfigureButtonPushed, true);
+      app.ExportfigureButton.Position = [28 88 100 22];
+      app.ExportfigureButton.Text = 'Export figure';
+
+      % Create DatafileLabel
+      app.DatafileLabel = uilabel(app.HomeTab);
+      app.DatafileLabel.Tooltip = {'*-txt file or m-file returning list of *-txt files'};
+      app.DatafileLabel.Position = [22 457 74 22];
+      app.DatafileLabel.Text = 'Data file';
+
+      % Create FilelistindexSpinner
+      app.FilelistindexSpinner = uispinner(app.HomeTab);
+      app.FilelistindexSpinner.ValueChangedFcn = createCallbackFcn(app, @FilelistindexSpinnerValueChanged2, true);
+      app.FilelistindexSpinner.Visible = 'off';
+      app.FilelistindexSpinner.Position = [200 420 64 22];
+
+      % Create UseFilelistmCheckBox
+      app.UseFilelistmCheckBox = uicheckbox(app.HomeTab);
+      app.UseFilelistmCheckBox.ValueChangedFcn = createCallbackFcn(app, @UseFilelistmCheckBoxValueChanged, true);
+      app.UseFilelistmCheckBox.Visible = 'off';
+      app.UseFilelistmCheckBox.Tooltip = {'Read Filelist.m in the Data folder'};
+      app.UseFilelistmCheckBox.Text = 'Use Filelist.m';
+      app.UseFilelistmCheckBox.Position = [17 420 94 22];
+
+      % Create FilelistindexLabel
+      app.FilelistindexLabel = uilabel(app.HomeTab);
+      app.FilelistindexLabel.Visible = 'off';
+      app.FilelistindexLabel.Position = [120 420 71 22];
+      app.FilelistindexLabel.Text = 'Filelist index';
+
+      % Create SinglefvsxtracesTab
+      app.SinglefvsxtracesTab = uitab(app.TabGroup);
+      app.SinglefvsxtracesTab.Title = 'Single f vs x traces';
+
+      % Create UIAxes3
+      app.UIAxes3 = uiaxes(app.SinglefvsxtracesTab);
+      title(app.UIAxes3, 'Title')
+      xlabel(app.UIAxes3, 'X')
+      ylabel(app.UIAxes3, 'Y')
+      zlabel(app.UIAxes3, 'Z')
+      app.UIAxes3.Position = [168 367 672 167];
+
+      % Create UIAxes4
+      app.UIAxes4 = uiaxes(app.SinglefvsxtracesTab);
+      title(app.UIAxes4, 'Title')
+      xlabel(app.UIAxes4, 'X')
+      ylabel(app.UIAxes4, 'Y')
+      zlabel(app.UIAxes4, 'Z')
+      app.UIAxes4.Position = [348 44 492 311];
+
+      % Create CyclenoSpinnerLabel
+      app.CyclenoSpinnerLabel = uilabel(app.SinglefvsxtracesTab);
+      app.CyclenoSpinnerLabel.HorizontalAlignment = 'right';
+      app.CyclenoSpinnerLabel.Position = [19 416 52 22];
+      app.CyclenoSpinnerLabel.Text = 'Cycle no';
+
+      % Create CyclenoSpinner
+      app.CyclenoSpinner = uispinner(app.SinglefvsxtracesTab);
+      app.CyclenoSpinner.ValueChangedFcn = createCallbackFcn(app, @CyclenoSpinnerValueChanged, true);
+      app.CyclenoSpinner.Position = [86 411 59 31];
+
+      % Create CycletypeButtonGroup
+      app.CycletypeButtonGroup = uibuttongroup(app.SinglefvsxtracesTab);
+      app.CycletypeButtonGroup.SelectionChangedFcn = createCallbackFcn(app, @CycletypeButtonGroupSelectionChanged, true);
+      app.CycletypeButtonGroup.Title = 'Cycle type';
+      app.CycletypeButtonGroup.Position = [22 451 137 78];
+
+      % Create PullrelaxButton
+      app.PullrelaxButton = uiradiobutton(app.CycletypeButtonGroup);
+      app.PullrelaxButton.Text = 'Pull-relax';
+      app.PullrelaxButton.Position = [11 29 78 22];
+      app.PullrelaxButton.Value = true;
+
+      % Create RelaxpullButton
+      app.RelaxpullButton = uiradiobutton(app.CycletypeButtonGroup);
+      app.RelaxpullButton.Text = 'Relax-pull';
+      app.RelaxpullButton.Position = [11 7 75 22];
+
+      % Create Trace1Label
+      app.Trace1Label = uilabel(app.SinglefvsxtracesTab);
+      app.Trace1Label.Position = [50 318 174 22];
+      app.Trace1Label.Text = 'Trace1';
+
+      % Create StartLabel
+      app.StartLabel = uilabel(app.SinglefvsxtracesTab);
+      app.StartLabel.Position = [50 280 40 22];
+      app.StartLabel.Text = 'Start';
+
+      % Create t11Label
+      app.t11Label = uilabel(app.SinglefvsxtracesTab);
+      app.t11Label.Position = [50 253 50 22];
+      app.t11Label.Text = 't11';
+
+      % Create Event1Label
+      app.Event1Label = uilabel(app.SinglefvsxtracesTab);
+      app.Event1Label.Position = [111 280 42 22];
+      app.Event1Label.Text = 'Event1';
+
+      % Create t12Label
+      app.t12Label = uilabel(app.SinglefvsxtracesTab);
+      app.t12Label.Position = [112 253 50 22];
+      app.t12Label.Text = 't12';
+
+      % Create EndLabel
+      app.EndLabel = uilabel(app.SinglefvsxtracesTab);
+      app.EndLabel.Position = [175 280 40 22];
+      app.EndLabel.Text = 'End';
+
+      % Create t13Label
+      app.t13Label = uilabel(app.SinglefvsxtracesTab);
+      app.t13Label.Position = [175 253 50 22];
+      app.t13Label.Text = 't13';
+
+      % Create ForceLabel
+      app.ForceLabel = uilabel(app.SinglefvsxtracesTab);
+      app.ForceLabel.Position = [236 280 40 22];
+      app.ForceLabel.Text = 'Force';
+
+      % Create f1Label
+      app.f1Label = uilabel(app.SinglefvsxtracesTab);
+      app.f1Label.Position = [236 253 40 22];
+      app.f1Label.Text = 'f1';
+
+      % Create xLabel
+      app.xLabel = uilabel(app.SinglefvsxtracesTab);
+      app.xLabel.Position = [292 280 40 22];
+      app.xLabel.Text = 'Δx';
+
+      % Create dx1Label
+      app.dx1Label = uilabel(app.SinglefvsxtracesTab);
+      app.dx1Label.Position = [292 253 50 22];
+      app.dx1Label.Text = 'dx1';
+
+      % Create Trace2Label
+      app.Trace2Label = uilabel(app.SinglefvsxtracesTab);
+      app.Trace2Label.Position = [50 221 174 22];
+      app.Trace2Label.Text = 'Trace2';
+
+      % Create StartLabel_2
+      app.StartLabel_2 = uilabel(app.SinglefvsxtracesTab);
+      app.StartLabel_2.Position = [50 192 40 22];
+      app.StartLabel_2.Text = 'Start';
+
+      % Create t21Label
+      app.t21Label = uilabel(app.SinglefvsxtracesTab);
+      app.t21Label.Position = [50 165 50 22];
+      app.t21Label.Text = 't21';
+
+      % Create Event2Label
+      app.Event2Label = uilabel(app.SinglefvsxtracesTab);
+      app.Event2Label.Position = [111 192 42 22];
+      app.Event2Label.Text = 'Event2';
+
+      % Create t22Label
+      app.t22Label = uilabel(app.SinglefvsxtracesTab);
+      app.t22Label.Position = [112 165 50 22];
+      app.t22Label.Text = 't22';
+
+      % Create EndLabel_2
+      app.EndLabel_2 = uilabel(app.SinglefvsxtracesTab);
+      app.EndLabel_2.Position = [175 192 40 22];
+      app.EndLabel_2.Text = 'End';
+
+      % Create t23Label
+      app.t23Label = uilabel(app.SinglefvsxtracesTab);
+      app.t23Label.Position = [175 165 50 22];
+      app.t23Label.Text = 't23';
+
+      % Create ForceLabel_2
+      app.ForceLabel_2 = uilabel(app.SinglefvsxtracesTab);
+      app.ForceLabel_2.Position = [236 192 40 22];
+      app.ForceLabel_2.Text = 'Force';
+
+      % Create f2Label
+      app.f2Label = uilabel(app.SinglefvsxtracesTab);
+      app.f2Label.Position = [236 165 40 22];
+      app.f2Label.Text = 'f2';
+
+      % Create xLabel_2
+      app.xLabel_2 = uilabel(app.SinglefvsxtracesTab);
+      app.xLabel_2.Position = [292 192 40 22];
+      app.xLabel_2.Text = 'Δx';
+
+      % Create dx2Label
+      app.dx2Label = uilabel(app.SinglefvsxtracesTab);
+      app.dx2Label.Position = [292 165 50 22];
+      app.dx2Label.Text = 'dx2';
+
+      % Create ExportfigureButton_2
+      app.ExportfigureButton_2 = uibutton(app.SinglefvsxtracesTab, 'push');
+      app.ExportfigureButton_2.ButtonPushedFcn = createCallbackFcn(app, @ExportfigureButton_2Pushed, true);
+      app.ExportfigureButton_2.Position = [238 25 98 26];
+      app.ExportfigureButton_2.Text = 'Export figure';
+
+      % Create allcyclesLabel
+      app.allcyclesLabel = uilabel(app.SinglefvsxtracesTab);
+      app.allcyclesLabel.Position = [91 387 68 22];
+      app.allcyclesLabel.Text = 'allcycles';
+
+      % Create ShowtracesButtonGroup
+      app.ShowtracesButtonGroup = uibuttongroup(app.SinglefvsxtracesTab);
+      app.ShowtracesButtonGroup.SelectionChangedFcn = createCallbackFcn(app, @ShowtracesButtonGroupSelectionChanged, true);
+      app.ShowtracesButtonGroup.Title = 'Show traces';
+      app.ShowtracesButtonGroup.Position = [236 59 100 91];
+
+      % Create BothButton
+      app.BothButton = uiradiobutton(app.ShowtracesButtonGroup);
+      app.BothButton.Text = 'Both';
+      app.BothButton.Position = [11 45 58 22];
+      app.BothButton.Value = true;
+
+      % Create PullButton
+      app.PullButton = uiradiobutton(app.ShowtracesButtonGroup);
+      app.PullButton.Text = 'Pull';
+      app.PullButton.Position = [11 23 65 22];
+
+      % Create RelaxButton
+      app.RelaxButton = uiradiobutton(app.ShowtracesButtonGroup);
+      app.RelaxButton.Text = 'Relax';
+      app.RelaxButton.Position = [11 1 65 22];
+
+      % Create MultiplefvsxtracesTab
+      app.MultiplefvsxtracesTab = uitab(app.TabGroup);
+      app.MultiplefvsxtracesTab.Title = 'Multiple f vs x traces';
+
+      % Create UIAxes6
+      app.UIAxes6 = uiaxes(app.MultiplefvsxtracesTab);
+      title(app.UIAxes6, 'Title')
+      xlabel(app.UIAxes6, 'X')
+      ylabel(app.UIAxes6, 'Y')
+      zlabel(app.UIAxes6, 'Z')
+      app.UIAxes6.Position = [168 374 672 167];
+
+      % Create UIAxes5
+      app.UIAxes5 = uiaxes(app.MultiplefvsxtracesTab);
+      title(app.UIAxes5, 'Title')
+      xlabel(app.UIAxes5, 'X')
+      ylabel(app.UIAxes5, 'Y')
+      zlabel(app.UIAxes5, 'Z')
+      app.UIAxes5.Position = [348 28 492 311];
+
+      % Create CyclespacingnmEditFieldLabel
+      app.CyclespacingnmEditFieldLabel = uilabel(app.MultiplefvsxtracesTab);
+      app.CyclespacingnmEditFieldLabel.HorizontalAlignment = 'right';
+      app.CyclespacingnmEditFieldLabel.Position = [140 231 108 22];
+      app.CyclespacingnmEditFieldLabel.Text = 'Cycle spacing (nm)';
+
+      % Create CyclespacingnmEditField
+      app.CyclespacingnmEditField = uieditfield(app.MultiplefvsxtracesTab, 'numeric');
+      app.CyclespacingnmEditField.ValueChangedFcn = createCallbackFcn(app, @CyclespacingnmEditFieldValueChanged, true);
+      app.CyclespacingnmEditField.Position = [263 228 35 27];
+      app.CyclespacingnmEditField.Value = 100;
+
+      % Create NumberofcyclesEditFieldLabel
+      app.NumberofcyclesEditFieldLabel = uilabel(app.MultiplefvsxtracesTab);
+      app.NumberofcyclesEditFieldLabel.HorizontalAlignment = 'right';
+      app.NumberofcyclesEditFieldLabel.Position = [140 264 98 22];
+      app.NumberofcyclesEditFieldLabel.Text = 'Number of cycles';
+
+      % Create NumberofcyclesEditField
+      app.NumberofcyclesEditField = uieditfield(app.MultiplefvsxtracesTab, 'numeric');
+      app.NumberofcyclesEditField.ValueChangedFcn = createCallbackFcn(app, @NumberofcyclesEditFieldValueChanged, true);
+      app.NumberofcyclesEditField.Position = [260 264 39 22];
+      app.NumberofcyclesEditField.Value = 4;
+
+      % Create StarttimeEditFieldLabel
+      app.StarttimeEditFieldLabel = uilabel(app.MultiplefvsxtracesTab);
+      app.StarttimeEditFieldLabel.HorizontalAlignment = 'right';
+      app.StarttimeEditFieldLabel.Position = [140 297 56 22];
+      app.StarttimeEditFieldLabel.Text = 'Start time';
+
+      % Create StarttimeEditField
+      app.StarttimeEditField = uieditfield(app.MultiplefvsxtracesTab, 'numeric');
+      app.StarttimeEditField.ValueChangedFcn = createCallbackFcn(app, @StarttimeEditFieldValueChanged, true);
+      app.StarttimeEditField.Position = [254 301 43 22];
+
+      % Create ExportgraphButton
+      app.ExportgraphButton = uibutton(app.MultiplefvsxtracesTab, 'push');
+      app.ExportgraphButton.ButtonPushedFcn = createCallbackFcn(app, @ExportgraphButtonPushed, true);
+      app.ExportgraphButton.Position = [239 72 83 22];
+      app.ExportgraphButton.Text = 'Export graph';
+
+      % Show the figure after all components are created
+      app.UIFigure.Visible = 'on';
+    end
+  end
+
+  % App creation and deletion
+  methods (Access = public)
+
+    % Construct app
+    function app = RipAnalysis(varargin)
+
+      % Create UIFigure and components
+      createComponents(app)
+
+      % Register the app with App Designer
+      registerApp(app, app.UIFigure)
+
+      % Execute the startup function
+      runStartupFcn(app, @(app)startupFcn(app, varargin{:}))
+
+      if nargout == 0
+        clear app
+      end
+    end
+
+    % Code that executes before app deletion
+    function delete(app)
+
+      % Delete UIFigure when app is deleted
+      delete(app.UIFigure)
+    end
+  end
+end

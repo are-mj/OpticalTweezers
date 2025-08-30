@@ -17,11 +17,12 @@ end
 TRIP = [];
 TZIP = [];
 for i = 1:numel(files)
-  try
+  % try
     [Trip,Tzip] = analyse_experiment(files(i),plotting,par);
-  catch
-    continue  % Skip files that give error
-  end
+  % catch ME
+  %   rethrow(ME)
+  %   continue  % Skip files that give error
+  % end
   TRIP =[TRIP;Trip];
   TZIP = [TZIP;Tzip];
   fprintf('Rips: %4d, Zips: %4d Filename: %s\n',height(Trip),height(Tzip),files(i));
