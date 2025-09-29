@@ -1,37 +1,35 @@
 function T = create_table(st)
 % Create Matlab results table array of pull or relax structs
 % Input 
-%    st: pull or relax struct array
+%    st: pull or relax struct
+
   if isempty(st)
-    T = [];
     return
   end
-
-  ncycles = length(st);  % Number of cycles with rips/zips
   T = [];
-  for i = 1:ncycles
-    nrips = length(st(i).force);  % Rips in cycle i
-    for j = 1:nrips
-      Filename = string(st(i).file);
-      Time = st(i).time(j);
-      Deltax = st(i).deltax(j);
-      Force = st(i).force(j);
-      Forceshift = st(i).fstep(j);
-      Trapx = st(i).ripx(j);
-      Fdot = st(i).fdot(j);
-      Slope_b = st(i).pfx_b(j,1);
-      Slope_a = st(i).pfx_a(j,1);
-      Pullingspeed = st(i).pullingspeed(j); 
-      Temperature = st(i).temperature(j);
-      Topforce = st(i).topforce(j);
-      Timestep = st(i).dt(j);
-      Noise = st(i).noise(j);
-      Fitrange = st(i).fitrange;
-      Cycleno = st(i).cycleno(j);
-      Work = st(i).work(j);
-      T = [T;table(Filename,Time,Deltax,Force,Temperature,Forceshift, ...
-        Trapx,Fdot,Slope_b,Slope_a,Pullingspeed,Topforce,Noise, ...
-        Fitrange,Cycleno,Work,Timestep)];
-      end
+  for k = 1:length(st)
+    nrips = length(st(k).force);
+    for i = 1:nrips
+      Filename = st(k).file;
+      Time = st(k).time(i);
+      Deltax = st(k).deltax(i);
+      Force = st(k).force(i);
+      Forceshift = st(k).fstep(i);
+      Trapx = st(k).ripx(i);
+      Fdot = st(k).fdot(i);
+      Slope_b = st(k).pfx_b(i,1);
+      Slope_a = st(k).pfx_a(i,1);
+      Pullingspeed = st(k).pullingspeed(i); 
+      Temperature = st(k).temperature(i);
+      Topforce = st(k).topforce(i);
+      Timestep = st(k).dt(i);
+      Noise = st(k).noise(i);
+      Fitrange = st(k).fitrange(i);
+      Cycleno = st(k).cycleno(i);
+      Work = st(k).work(i);
+      T = [T;table(Filename,Time,Deltax,Force,Temperature,Forceshift,Trapx,...
+              Fdot,Slope_b,Slope_a,Pullingspeed,Topforce,Noise,Fitrange,...
+              Cycleno,Work,Timestep)];
+    end
   end
 end
