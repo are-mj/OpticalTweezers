@@ -45,9 +45,6 @@ function s = rip_finder(s,par)
   s.temperature = [];
   s.noise = [];
   s.fitrange = [];
-  s.pullingspeed = [];
-  s.cycleno = [];
-  s.topforce = [];
 
   sgn = sign(s.f(end)-s.f(1));  % +1 for pull, -1 for relax
   
@@ -80,7 +77,8 @@ function s = lookforrip(s,sgn,par)
     min_peak = max(sslope(10),par.minpeak_slope);
   else  % Use relax trace parameters. Scale by signal noise.
     % Skip first third of trace (refolding unlikely here)
-    slope = movingslope(f,max(round(n_points*0.03),2));
+    % slope = movingslope(f,max(round(n_points*0.03),2));
+    slope = movingslope(f,par.supportlength);
     dslope = detrend(slope);
     noise = movstd(f-smoothdata(f,1,'movmean',smoothwindow),stdwindow);
     mean_noise = mean(noise);
@@ -135,7 +133,9 @@ function s = lookforrip(s,sgn,par)
     s.pfx_a = s.pfx_a(okrips,:);
     s.fitrange = s.fitrange(okrips,:);
   else
-    [~,best] = max(fstep.*weight);
+    % [~,best] = max(fstep.*weight);
+    [~,best] = max(abs(fstep).*weight); % abs necessary for relaxing trace
+                           % This bug went undiscovered until Aug. 2025!!
     rip_index = rip_index(best);
     fstep = fstep(best);
     s.pfx_b = s.pfx_b(best,:);
@@ -173,23 +173,21 @@ function s = lookforrip(s,sgn,par)
 end
 
 
-function okripindex = merge_rip_clusters(rip_index,quality,epsilon)
+function okrips = merge_rip_clusters(x,quality,epsilon)
     % Perform DBSCAN clustering
-    idx = dbscan(rip_index, epsilon, 1);
+    idx = dbscan(x, epsilon, 1);
     
     % Initialize logical array
-    okrips = false(size(rip_index));
+    okrips = false(size(x));
     
     % Get unique cluster labels
     uniqueClusters = unique(idx(idx > 0));  % Exclude noise points (idx == 0)
     
     % Loop through each cluster to find the highest quality point
-    okripindex = zeros(length(uniqueClusters),1);
     for i = 1:length(uniqueClusters)
         cluster = uniqueClusters(i);
         clusterIdx = find(idx == cluster);
         [~, highestQualityPos] = max(quality(clusterIdx));
         okrips(clusterIdx(highestQualityPos)) = true;
-        okripindex(i) = i;
     end
 end

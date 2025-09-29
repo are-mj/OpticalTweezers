@@ -69,9 +69,9 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
   end
 %% Full file format:
   timecol = contains(data.Properties.VariableNames,'time_sec_');
-  % if any(timecol)
-  %   t = data.time_sec_;
-  % else
+  if any(timecol)
+    t = data.time_sec_;
+  else
     cps = 4000;  % CycleCounts per second
     countscol = find(contains(data.Properties.VariableNames,'CycleCount'));
     if any(countscol)
@@ -112,7 +112,8 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
     if exist("params.m","file")
       par = params;
       if isfield(par,'Tlist') && isfield(par,"Instrumentname")
-        instrumentno = find(contains(instrument,par.Instrumentname));
+        % instrumentno = find(contains(instrument,par.Instrumentname));
+        instrumentno = find(strcmp(instrument,par.Instrumentname));
         if isempty(instrumentno)
           error('Unknown instrument: %s. Cannot determine temperature',instrument);
         else
