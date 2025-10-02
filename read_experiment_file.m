@@ -77,7 +77,7 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
     if any(countscol)
       % t = data.CycleCount/cps;
       t = table2array(data(:,countscol))/cps;
-    % end    
+    end    
   end
 
   if numel(t) < 10
