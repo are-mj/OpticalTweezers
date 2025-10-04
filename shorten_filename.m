@@ -7,7 +7,7 @@ function shortname = shorten_filename(fullname,levels)
   if nargin < 2
     levels = 2;
   end
-  filename = strrep(fullname,'\','/');  % Use Unix separator
+  filename = string(strrep(fullname,'\','/'));  % Use Unix separator
   slashes = [0,regexp(filename,'\/')];  % Position of '/' in files
   fn = char(filename);  % Translate to character array
   maxlevels = numel(slashes);

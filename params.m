@@ -1,10 +1,17 @@
 function par = params
 % parameters used by analyse_new.m  
 
+%  SETTINGS:
 % Specify which rips to look for:
   par.maxrips = 1;       % Maximum number of rips/zips accepted per trace
   par.laterips = 0;      % 1: Look for rips in the relax trace. 0: skip
 
+% Worm-Like-Chain parameters
+  % Top7:
+  par.WLC_P = 0.65;   % Persistence  length (nm)
+  par.WLC_L0 = 29.28;  % Contour length (nm)  
+
+% TUNING PARAMETERS FOR ANALYSE_EXPERIMEMT:
 % Parameters for separating out individual traces:
   par.threshold = 12; % (pN) Crossing this value defines high and low force periods
   par.lim = 16; % (pN) High force periods that stay below this value are disregarded as noise
@@ -27,11 +34,6 @@ function par = params
 % deltax limits (discard rips/zips outside limits)
   par.deltaxlimits_rips = [5,30];
   par.deltaxlimits_zips = [-30,-5];
-
-% Worm-Like-Chain parameters
-  % Top7:
-  par.WLC_P = 0.65;   % Persistence  length (nm)
-  par.WLC_L0 = 29.28;  % Contour length (nm)
   
 % Extra heating table;  
 % Row 1: heater setting, from digits 2 and 3 in status column.
