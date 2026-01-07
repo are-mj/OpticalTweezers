@@ -3,10 +3,10 @@ function r = valid_trace_part(f,sgn)
   nf = numel(f);
   r = 1:nf;
 
-  noise = std(f-smoothdata(f,"movmean",round(nf/10)));
-  if noise > 1  % Data too noisy.  Accept full trace
-    return
-  end
+  % noise = std(f-smoothdata(f,"movmean",round(nf/10)));
+  % if noise > 1  % Data too noisy.  Accept full trace
+  %   return
+  % end
   firstgood = 1;
   lastgood = nf;  
   f = sgn*f;

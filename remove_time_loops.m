@@ -6,10 +6,10 @@ function [t,f,x,T] = remove_time_loops(t,f,x,T)
   bad = isnan(x) | isnan(f) | isnan(t);
   f(bad) = []; x(bad)=[]; t(bad) = [];T(bad) = [];
 
-  if sum(diff(t)<0)== 0  % No time repeats
+  if sum(diff(t)<-0.1)== 0  % No significant time repeats
     return
   end
-  % First eliminate cases where a time interval is copiedd higher
+  % First eliminate cases where a time interval is copied higher
   % (earlier) in the file
   earlycopy = find(diff(t)>0.5);
   if isempty(earlycopy)

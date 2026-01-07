@@ -1,10 +1,10 @@
-function [ripcases,zipcases] = cases(TRIP,TZIP)
+function [ripcases,zipcases,clusters] = cases_top7(TRIP,TZIP)
 % Create logical arrays for combinations of 
 %   Temperature
 %   Pulling speed
-%   Cluster
+%   clusters
 % Output:
-%   ripcases : Unfoldig cases
+%   ripcases : Unfolding cases
 %     ripcases(m).selected is a logical column vector
 %       True if TRIP.Temperature is in ripcases(m).Tclass
 %       and TRIP.Pullingspeed is in ripcases(m).speedclass
@@ -26,6 +26,7 @@ function [ripcases,zipcases] = cases(TRIP,TZIP)
   slow = speed<50;
   speedclass = [slow,normal,fast];
   speedtext = ["<50","50-250",">250"];
+  clusters = clusterdefs(Trip);
   
   m = 0;
   for i = 1:4  % Temp
@@ -38,7 +39,7 @@ function [ripcases,zipcases] = cases(TRIP,TZIP)
       m = m+1;
       ripcases(m).selected = Tclass(:,i) & speedclass(:,j);
       ripcases(m).text = strcat("Unfolding, ",Ttext(i),", ",speedtext(j));
-
+      ripcases(m).clusters = ripcases(m).selected & clusters;
     end
   end
 
@@ -59,7 +60,7 @@ function [ripcases,zipcases] = cases(TRIP,TZIP)
     for i = 1:4  % Temp
       if i == 2 ||  i == 3
         speeds = 2;
-      else 
+      else ripcases
         speeds = 1:3;
       end
       for j = speeds % Speed

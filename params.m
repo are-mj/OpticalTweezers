@@ -5,6 +5,9 @@ function par = params
 % Specify which rips to look for:
   par.maxrips = 1;       % Maximum number of rips/zips accepted per trace
   par.laterips = 0;      % 1: Look for rips in the relax trace. 0: skip
+  par.maxpointspertrace = 1000; % Decimate time series if the mean number of 
+                         % records per trace exceeds this value.
+                         % Set to 0 for no decimation
 
 % Worm-Like-Chain parameters
   % Top7:

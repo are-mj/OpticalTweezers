@@ -1,4 +1,4 @@
-function [DG,DGci] = fit_Crooks(TRIP,TZIP,par,plotting)
+function [DG,DGci,Wsu_kcal,Wu_kcal,Wsr_kcal,Wr_kcal] = fit_Crooks(TRIP,TZIP,par,plotting)
 % Calculate DG from unfolding and refolding parameters dx and log10k0 
 % DG equals the work at the point where unfolding and refolding work are
 % equal, according to the Crooks fluctuation theorem
@@ -30,10 +30,11 @@ function [DG,DGci] = fit_Crooks(TRIP,TZIP,par,plotting)
   f_refold(bad) = [];  % Skip unrealistic values
   deltax_refold = -TZIP.Deltax;
   deltax_refold(bad) = []; 
-  Ws = stretchwork(f_refold,deltax_refold,P,T,L0); % Should we subtract Ws here?
-  Wr = f_refold.*deltax_refold - Ws;
+  Wsr = stretchwork(f_refold,deltax_refold,P,T,L0); % Should we subtract Wsr here?
+  Wr = f_refold.*deltax_refold - Wsr;
   % Convert to kcal/mol to get the correct pdr plot
   Wr_kcal = Wr*conversion;  % Convert energy units
+  Wsr_kcal = Wsr*conversion;
   pdr = fitdist(Wr_kcal,'normal');   % Normal distribution
 
   % Unfold:
@@ -50,9 +51,10 @@ function [DG,DGci] = fit_Crooks(TRIP,TZIP,par,plotting)
 
   fu = f_unfold;
   dxu = deltax_unfold;
-  Ws = stretchwork(fu,dxu,P,T,L0);
-  Wu = fu.*dxu-Ws;        % Net work
+  Wsu = stretchwork(fu,dxu,P,T,L0);
+  Wu = fu.*dxu-Wsu;        % Net work
   Wu_kcal = Wu*conversion;
+  Wsu_kcal = Wsu*conversion;
   pdu = fitdist(Wu_kcal,'normal');
   DG = match(pdr,pdu);  % kcal/mol
   if nargout > 1

@@ -54,6 +54,7 @@ function s = rip_finder(s,par)
   s.f = s.f(rng);
   s.x = s.x(rng);
   s.t = s.t(rng);
+  s.T = s.T(rng);
   s = lookforrip(s,sgn,par);
 end
 

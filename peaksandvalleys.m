@@ -67,7 +67,8 @@ function  [peakpos,valleypos] = peaksandvalleys(f,threshold,lim,plotting)
       valleypos(1) = [];  % handle bad data before first valley
     end
   end
-  valleypos(f(valleypos)<0) = []; % renove unrealistic valleys
+  % This comand messes up the alternating peak-valley sequence:
+  % valleypos(f(valleypos)<0) = []; % renove unrealistic valleys
 
   if plotting
     figure;

@@ -36,6 +36,8 @@ pf = vertcat(pull.force);
 rt = vertcat(relax.time);
 rf = vertcat(relax.force);
 
-figure;
-plot(t,f,pt,pf,'*r',rt,rf,'ok')
+if plotting
+  figure;
+  plot(t,f,pt,pf,'*r',rt,rf,'ok')
+end
 

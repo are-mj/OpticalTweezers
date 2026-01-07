@@ -46,5 +46,8 @@ function [T,instrument] = T_from_COM(file)
       instrument = strtrim(lines{j}(pos+1:numel(lines{j})));
     end    
   end
+  if isempty(TB)
+    warning("Bath temperature not found")
+  end
   T = round(mean(TB,'omitnan'),2);
 end

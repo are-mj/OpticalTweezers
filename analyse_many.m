@@ -6,7 +6,9 @@ function [TRIP,TZIP] = analyse_many(files,plotting,par)
 %          or:      Short name, such that fullfile(datafolder,file) gives
 %                   complete path and file
 %   plotting:  1 - plot results
+%              2 - plot temperature
 %              0 or absent:  Do not plot
+% SEE ALSO:: collect_tables.m
 
 if nargin < 3
   par = params;
@@ -18,7 +20,11 @@ TRIP = [];
 TZIP = [];
 for i = 1:numel(files)
   % try
-    [Trip,Tzip] = analyse_experiment(files(i),plotting,par);
+    [Trip,Tzip,pull,relax,t,f,x,T] = analyse_experiment(files(i),plotting,par);
+    if plotting == 2
+      figure; plot(t,T)
+      title(files(i));
+    end
   % catch ME
   %   rethrow(ME)
   %   continue  % Skip files that give error
