@@ -155,26 +155,13 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
       end
     end    
 
-    % Initialise relaxation trace struct
+    % Relaxation trace struct
     rlxrng = rng(pkpos+1:end);
     r.file = file;
     r.t = t(rlxrng);
     r.f = f(rlxrng);
     r.x = x(rlxrng);
     r.T = T(rlxrng);    
-    r.pullingspeed = 0;  % Placeholder only
-    r.cycleno = cycleno;
-    r.topforce = r.f(1);
-    if par.laterips  
-      p = laterip_trace(r,p,par);
-    end
-    p = trim_trace(p,par);
-    if ~isempty(p.force)
-      pull = [pull;p];
-      Trip = [Trip;create_table(p)];
-    end
-    
-    % Zips in relaxing trace
     r = rip_finder(r,par);
     nzp = length(r.ripx);
     if nzp < 1 | r.force < 0
@@ -192,6 +179,15 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
       relax = [relax;r];
       Tzip = [Tzip;create_table(r)];
     end
+
+    if par.laterips  
+      p = laterip_trace(r,p,par);
+    end
+    p = trim_trace(p,par);
+    if ~isempty(p.force)
+      pull = [pull;p];
+      Trip = [Trip;create_table(p)];
+    end    
 
   end
   % Handle pulling trace after last cycle:
