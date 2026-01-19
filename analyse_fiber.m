@@ -39,5 +39,6 @@ rf = vertcat(relax.force);
 if plotting
   figure;
   plot(t,f,pt,pf,'*r',rt,rf,'ok')
+  title(fiber);
 end
 

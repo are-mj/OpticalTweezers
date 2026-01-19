@@ -3,6 +3,7 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
 %   Can also read a file with only three columns (t,x,f)
 % Input: filename - including full path if not in Matlab's search path
 %        Tlist: Table specifying extra heating from the status column
+%           Skip if nargout < 4
 %           Tlist = []:  Read Tlist from params.m if possible
 %                        Otherwise use T from COM file
 %           Tlist = single number: Set temperature to this number
@@ -98,42 +99,46 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
     x = detrend(x); 
   end
 
-  % *** Temperature  ***
-  try
-    % Read bath temperature from COM file.
-    [Tbath,instrument] = T_from_COM(filename); % Temperature outside cell
-    T = ones(size(t))*Tbath;
-  catch
-    T = 5*ones(size(t));  % Default bath temperature if COM file not found
-  end
-  if isempty(Tlist)  % Try reading from params.m
-    if exist("params.m","file")
-      par = params;
-      if isfield(par,'Tlist') && isfield(par,"Instrumentname")
-        instrumentno = find(strcmp(instrument,par.Instrumentname));
-        if isempty(instrumentno)
-          error('Unknown instrument: %s. Cannot determine temperature',instrument);
-        else
-          Tlist = par.Tlist{instrumentno};
+  if nargout > 3  % Skip if t not requested
+    % *** Temperature  ***  
+    try
+      % Read bath temperature from COM file.
+      [Tbath,instrument] = T_from_COM(filename); % Temperature outside cell
+      T = ones(size(t))*Tbath;
+    catch
+      T = 5*ones(size(t));  % Default bath temperature if COM file not found
+    end
+    if isempty(Tlist)  % Try reading from params.m
+      if exist("params.m","file")
+        par = params;
+        if isfield(par,'Tlist') && isfield(par,"Instrumentname")
+          instrumentno = find(strcmp(instrument,par.Instrumentname));
+          if isempty(instrumentno)
+            error('Unknown instrument: %s. Cannot determine temperature',instrument);
+          else
+            Tlist = par.Tlist{instrumentno};
+          end
         end
+      else
+        error('Parameter function params.m not found')
       end
-    else
-      error('Parameter function params.m not found')
     end
-  end
-
-  if isscalar(Tlist)  % This option also handles Tlist == NaN						   
-    T = Tlist*ones(size(t)); % Fixed T specified
-    return
-  end
- 
-  if ~isnan(T)
-    % Read heater setting from digits 2 and 3 in the status column 
-    heater_setting = floor(rem(status,1000)/10);  % Number from digits 2 and 3
-    heater_setting(status<1000) = NaN; 
-    for ii = 1:size(Tlist,2)
-      ix = heater_setting==Tlist(1,ii);
-      T(ix) = T(ix) + Tlist(2,ii);				   
+  
+    if isscalar(Tlist)  % This option also handles Tlist == NaN						   
+      T = Tlist*ones(size(t)); % Fixed T specified
+      return
     end
+   
+    if ~isnan(T)
+      % Read heater setting from digits 2 and 3 in the status column 
+      heater_setting = floor(rem(status,1000)/10);  % Number from digits 2 and 3
+      heater_setting(status<1000) = NaN; 
+      for ii = 1:size(Tlist,2)
+        ix = heater_setting==Tlist(1,ii);
+        T(ix) = T(ix) + Tlist(2,ii);				   
+      end
+    end
+  else
+    T = NaN;
   end
 end
