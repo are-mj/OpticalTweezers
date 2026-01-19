@@ -2,10 +2,13 @@ function p = laterip_trace(s,p,par)
 % Looks for rips in relaxation trace and adds adds the largest to the 
 % pulling trace struct p
 % Input s is the relaxing trace. Only s.t s.f, s.x  and s.T are used.
-%   If valid rips are found, data for the largest rip are added.
+% Output:
+%  p: trace data for full pull_relax cycle
+%   If valid rips are found, data for the largest rip are used
+
   sgn = sign(s.f(end)-s.f(1));  % +1 for pull, -1 for relax
   if sgn > 0
-    warning('laterip takes relax traces only')
+    warning('laterip requires the first input to be a relaxing trace struct')
     return
   end
   f = s.f;
@@ -15,9 +18,6 @@ function p = laterip_trace(s,p,par)
   if n_points<50
     return
   end
-
-  % smoothwindow = n_points*0.02;
-  % stdwindow = round(n_points*0.1);
 
   slope = movingslope(f,max(round(n_points*0.01),2));
   dslope = detrend(slope);
@@ -36,7 +36,7 @@ function p = laterip_trace(s,p,par)
     return
   end
 
-  [peaks,order] = sort(peaks,'descend');
+  [~,order] = sort(peaks,'descend');
   rip_index = rip_index(order(1));  % Seect only the largest
   if rip_index < 3
     return
@@ -57,7 +57,7 @@ function p = laterip_trace(s,p,par)
   fstep(i)   = polyval(pft_b(i,:),t(rip_index(i)))-polyval(pft_a(i,:),t(rip_index(i)));
   noise(i) = std(f(fitrange_b)-polyval(pft_b(i,:),t(fitrange_b)));   
   % Skip events if fstep < noise*10 (higher limit than in rip_finder)
-  ok = fstep >= noise*10;    
+  ok = fstep >= noise*3;    
   if ok
     s.ripx = s.x(rip_index(i));
     s.force = polyval(pfx_b(i,:),s.ripx);
@@ -75,23 +75,31 @@ function p = laterip_trace(s,p,par)
     s.noise = noise(i);
     s.fitrange = [fitstart,fitend];
     s.work = NaN;
+    s.cycleno = p.cycleno;
+    s.topforce = p.topforce;
     if isempty(s.force) || s.deltax < 5 || s.deltax > 30 ||s.force<10
       return
     else 
-      p = mergestructs(p,s);
+      p= mergestructs(p,s);
     end    
   end
 end
 
 function p = mergestructs(p,s)
-  s.pullingspeed = mean(diff(s.x)./diff(s.t));
-  p.t = [p.t;s.t];
-  p.f = [p.f;s.f];
-  p.x = [p.x;s.x];
-  p.T = [p.T;s.T];
-  fn = string(fieldnames(p));
-  for i = 5:length(fn)
-    p.(fn(i)) = [p.(fn(i));s.(fn(i))];
+  if isempty(p.fstep) | s.fstep > p.fstep
+    rip_index = length(p.t)+s.rip_index;
+    s.pullingspeed = mean(diff(s.x)./diff(s.t));
+    p.t = [p.t;s.t];
+    p.f = [p.f;s.f];
+    p.x = [p.x;s.x];
+    p.T = [p.T;s.T];
+    fn = string(fieldnames(p));
+    
+    for i = 5:length(fn)
+      p.(fn(i)) = s.(fn(i));
+    end
+    p.rip_index = rip_index;
+    p.topforce = max(p.f);
   end
 end
     

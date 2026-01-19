@@ -135,28 +135,31 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
     nrp = length(p.force);
     p.cycleno = repmat(cycleno,[nrp,1]);
     p.topforce = repmat(p.f(end),[nrp,1]); 
-    p.pullingspeed = abs(median(diff(p.x)./diff(p.t)))*ones(nrp,1);    
-    bad = isempty(p.force) || p.force < 0;
-    % if all(bad)  & Bug, because all([]) is true!
-    if ~isempty(bad) & all(bad)  % Corected 2025-09-05
-      continue  % Skip this cycle
-    else
-      fn = string(fieldnames(p));
-      for i = 6:length(fn)
-        p.(fn(i))(bad,:) = [];
+    p.pullingspeed = abs(median(diff(p.x)./diff(p.t)))*ones(nrp,1); 
+    if par.laterips == 0
+      bad = isempty(p.force) || p.force < 0;
+      % if all(bad)  & Bug, because all([]) is true!
+      if ~isempty(bad) & all(bad) & par.laterips == 0% Corected 2025-09-05
+        continue  % Skip this cycle
       end
-      nrp = length(p.force);
-      if nrp < 1
-        p.work = [];  % Bug fix 2025-09-05
-      end      
-      for rpno = 1:nrp
-        p.work(rpno,1) = Crooks_work(p.force(rpno),p.deltax(rpno), ...
-          p.temperature(rpno),par);
-      end
-    end    
+    end
+    
+    fn = string(fieldnames(p));
+    for i = 6:length(fn)
+      p.(fn(i))(bad,:) = [];
+    end
+    nrp = length(p.force);
+    if nrp < 1
+      p.work = [];  % Bug fix 2025-09-05
+    end      
+    for rpno = 1:nrp
+      p.work(rpno,1) = Crooks_work(p.force(rpno),p.deltax(rpno), ...
+        p.temperature(rpno),par);
+    end   
 
     % Relaxation trace struct
-    rlxrng = rng(pkpos+1:end);
+    % rlxrng = rng(pkpos+1:end);  % Test 20260119 to include early laterips
+    rlxrng = rng(pkpos:end);
     r.file = file;
     r.t = t(rlxrng);
     r.f = f(rlxrng);
@@ -164,24 +167,27 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
     r.T = T(rlxrng);    
     r = rip_finder(r,par);
     nzp = length(r.ripx);
-    if nzp < 1 | r.force < 0
-      continue
-    end
-    r.pullingspeed = abs(median(diff(r.x)./diff(r.t)))*ones(nzp,1);
-    for zpno = 1:nzp
-      r.work(zpno,1) = Crooks_work(r.force(zpno),r.deltax(zpno), ...
-        r.temperature(zpno),par);
-    end
-    r.topforce = r.f(1)*ones(nzp,1);
-    r.cycleno = cycleno*ones(nzp,1);
-    r = trim_trace(r,par);
-    if ~isempty(r.force)
-      relax = [relax;r];
-      Tzip = [Tzip;create_table(r)];
+    if nzp > 0 & r.force > 0
+      r.pullingspeed = abs(median(diff(r.x)./diff(r.t)))*ones(nzp,1);
+      for zpno = 1:nzp
+        r.work(zpno,1) = Crooks_work(r.force(zpno),r.deltax(zpno), ...
+          r.temperature(zpno),par);
+      end
+      r.topforce = r.f(1)*ones(nzp,1);
+      r.cycleno = cycleno*ones(nzp,1);
+      r = trim_trace(r,par);
+      if ~isempty(r.force)
+        relax = [relax;r];
+        Tzip = [Tzip;create_table(r)];
+      end
     end
 
     if par.laterips  
       p = laterip_trace(r,p,par);
+      p.cycleno = cycleno;
+    end
+    if isempty(p.force)
+      continue
     end
     p = trim_trace(p,par);
     if ~isempty(p.force)
@@ -220,6 +226,9 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
       else
         p.work = NaN;
       end
+      if par.laterips  
+        p = laterip_trace(r,p,par);
+      end      
       p = trim_trace(p,par);
       if ~isempty(p.force)
         pull = [pull;p];
@@ -256,7 +265,9 @@ end
 function st = trim_trace(st,par)
 % Remove structs with unlikely variable values from trace struct 
   bad = false;
-  if st.fdot > 0  % Pulling trace
+  laterip = st.topforce - st.f(1) > 5 & st.topforce - st.f(end) > 5;
+  % st comprises both pulling and relaxing trace -> late rip found
+  if st.fdot > 0 || laterip % Pulling trace
     deltaxlim = par.deltaxlimits_rips;
   else  % Relaxing trace
     deltaxlim = par.deltaxlimits_zips;
