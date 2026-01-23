@@ -136,17 +136,20 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
     p.cycleno = repmat(cycleno,[nrp,1]);
     p.topforce = repmat(p.f(end),[nrp,1]); 
     p.pullingspeed = abs(median(diff(p.x)./diff(p.t)))*ones(nrp,1); 
-    if par.laterips == 0
-      bad = isempty(p.force) || p.force < 0;
-      % if all(bad)  & Bug, because all([]) is true!
-      if ~isempty(bad) & all(bad) & par.laterips == 0% Corected 2025-09-05
-        continue  % Skip this cycle
-      end
-    end
+    % if par.laterips == 0
+    %   bad = isempty(p.force) || p.force < 0;
+    %   % if all(bad)  & Bug, because all([]) is true!
+    %   if ~isempty(bad) & all(bad) & par.laterips == 0% Corected 2025-09-05
+    %     continue  % Skip this cycle
+    %   end
+    % end
     
-    fn = string(fieldnames(p));
-    for i = 6:length(fn)
-      p.(fn(i))(bad,:) = [];
+    bad = isempty(p.force) || p.force < 0;
+    if par.maxrips > 1
+      fn = string(fieldnames(p));
+      for i = 6:length(fn)
+        p.(fn(i))(bad,:) = [];
+      end
     end
     nrp = length(p.force);
     if nrp < 1
@@ -174,7 +177,7 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
           r.temperature(zpno),par);
       end
       r.topforce = r.f(1)*ones(nzp,1);
-      r.cycleno = cycleno*ones(nzp,1);
+      r.cycleno = cycleno*ones(nzp,1);  
       r = trim_trace(r,par);
       if ~isempty(r.force)
         relax = [relax;r];
@@ -185,9 +188,6 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
     if par.laterips  
       p = laterip_trace(r,p,par);
       p.cycleno = cycleno;
-    end
-    if isempty(p.force)
-      continue
     end
     p = trim_trace(p,par);
     if ~isempty(p.force)
@@ -228,7 +228,7 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
       end
       if par.laterips  
         p = laterip_trace(r,p,par);
-      end      
+      end
       p = trim_trace(p,par);
       if ~isempty(p.force)
         pull = [pull;p];
@@ -264,6 +264,9 @@ end
 
 function st = trim_trace(st,par)
 % Remove structs with unlikely variable values from trace struct 
+  if isempty(st.force)
+    return
+  end
   bad = false;
   laterip = st.topforce - st.f(1) > 5 & st.topforce - st.f(end) > 5;
   % st comprises both pulling and relaxing trace -> late rip found
