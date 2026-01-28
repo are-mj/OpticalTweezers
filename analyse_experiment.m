@@ -136,13 +136,6 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
     p.cycleno = repmat(cycleno,[nrp,1]);
     p.topforce = repmat(p.f(end),[nrp,1]); 
     p.pullingspeed = abs(median(diff(p.x)./diff(p.t)))*ones(nrp,1); 
-    % if par.laterips == 0
-    %   bad = isempty(p.force) || p.force < 0;
-    %   % if all(bad)  & Bug, because all([]) is true!
-    %   if ~isempty(bad) & all(bad) & par.laterips == 0% Corected 2025-09-05
-    %     continue  % Skip this cycle
-    %   end
-    % end
     
     bad = isempty(p.force) || p.force < 0;
     if par.maxrips > 1
