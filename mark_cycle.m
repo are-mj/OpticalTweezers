@@ -1,5 +1,5 @@
 function mark_cycle(ax,k,t,peakpos,valleypos,pullfirst)
-% Mark cycle no k
+% Mark cycle no k.  Used by RipAnalysis.mlapp
 
   if isfield(ax.UserData,'region')
     delete(ax.UserData.region)  % remove existing region

@@ -1,7 +1,7 @@
 # OpticalTweezers
 Matlab functions for post-processing of protein stretching experiments
 
-This repository contains Matlab code to analyse experiment files from optical tweezer experiments wher a single protein is stretched until unfoldeing (rip) and then allowed to relax and refold (zip)  
+This repository contains Matlab code to analyse experiment files from optical tweezer experiments where a single protein is stretched until unfolding (rip) and then allowed to relax and refold (zip)  
 
 Central files:
 
