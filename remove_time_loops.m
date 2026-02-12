@@ -1,6 +1,6 @@
 function [t,f,x,T] = remove_time_loops(t,f,x,T)
-%  Occasionally, the recorded time series contains repeated episodes. 
-%  This function removes such episodes from the data
+%  Very occasionally, the recorded time series contains repeated or 
+%  time-shifted episodes. This function removes such episodes from the data
 
   % Eliminate records containing NaN:
   bad = isnan(x) | isnan(f) | isnan(t);
