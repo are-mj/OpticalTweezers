@@ -64,14 +64,14 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
     fprintf("No peaks or valleys in Filename: %s\n",shortname)
     return
   end
+
   % Decimate time series if number of points per trace is too high:
-  [~,~,t,f,x,T] = decim(peakpos,valleypos,par,t,f,x,T);
-
-  [peakpos,valleypos] = peaksandvalleys(f,par.threshold,par.lim,0);
-  % analyse all traces for rips/zips
-
-  % valleyfirst = peakpos(1)>valleypos(1);
+  [factor,t,f,x,T] = decim(peakpos,valleypos,par,t,f,x,T);
+  if factor > 1  % Repeat peaksandvalleys if time series were decimated
+    [peakpos,valleypos] = peaksandvalleys(f,par.threshold,par.lim,0);
+  end
   peakfirst = peakpos(1)<valleypos(1);
+  peaklast = peakpos(end)>valleypos(end); 
  
   % Remove drift in x by forcing x=0 at valleys
   % NOTE: This inevitably results in discontinuos x at peaks
@@ -82,10 +82,9 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
     rngrlx = peakpos(i+peakfirst)+1:valleypos(i+1);
     x(rngrlx) = x(rngrlx) - min(x(rngrlx));
   end
-  if peakpos(end)>valleypos(end)
-    rngpull = valleypos(end)+1:peakpos(end);  % Bug fix 20250907
-    x(rngpull) = x(rngpull)-min(x(rngpull));   
-  end  
+  % Handle part after last valleypos
+  rng2end = valleypos(end)+1:numel(x); 
+  x(rng2end) = x(rng2end)-min(x(rng2end));      
 
   % First handle relaxing trace before first cycle:
   if peakfirst
@@ -187,10 +186,10 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
       pull = [pull;p];
       Trip = [Trip;create_table(p)];
     end    
-
   end
-  % Handle pulling trace after last cycle:
-  if peakpos(end) > valleypos(end)
+
+  % Handle pulling trace after last cycle
+  if peaklast
     pullrng = valleypos(end):peakpos(end);
     if length(pullrng) > 40  % Eliminate unrealisputically short ranges
       p.file = file;

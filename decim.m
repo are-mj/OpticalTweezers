@@ -1,4 +1,4 @@
-function [peakpos,valleypos,varargout] = decim(peakpos,valleypos,par,varargin)
+function [factor,varargout] = decim(peakpos,valleypos,par,varargin)
 % Reduce excessive number of data points in a set of time series.
 %  This often makes it easier to detect rips nd zips.
 %  Time series are smoothed and downsampled so that the number of data
@@ -6,6 +6,7 @@ function [peakpos,valleypos,varargout] = decim(peakpos,valleypos,par,varargin)
 % Used by analyse_experiment.m
 % Typical use:
 %   [peakpos,valleypos,t,f,x,T] = decim(peakpos,valleypos,t,f,x,T,par)
+  factor = 1;
   if par.maxpointspertrace == 0
     varargout = varargin;
     return
@@ -21,8 +22,6 @@ function [peakpos,valleypos,varargout] = decim(peakpos,valleypos,par,varargin)
       smoothedvar = movmean(varargin{i},factor);
       varargout{i} = downsample(smoothedvar,factor);
     end
-    peakpos = round(peakpos/factor);
-    valleypos = round(valleypos/factor);
   else
     varargout = varargin;
   end
