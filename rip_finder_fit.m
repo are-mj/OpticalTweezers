@@ -1,4 +1,4 @@
-function [pfx_a,pfx_b,pft_a,pft_b,fdot,fstep,weight,noise,fitr] = rip_finder_fit(s,rip_index,par)
+function [pfx_a,pfx_b,fdot,fstep,weight,noise,fitr] = rip_finder_fit(s,rip_index,par)
 % Fit linear polynomials to f(x) before and after rips or zips
 % Returns data for potentital rips.
 % Input: s: stretching or relaxing trace with experiment results:

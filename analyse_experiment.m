@@ -85,7 +85,7 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
   % Handle part after last valleypos
   rng2end = valleypos(end)+1:numel(x); 
   x(rng2end) = x(rng2end)-min(x(rng2end));      
-
+  
   % First handle relaxing trace before first cycle:
   if peakfirst
     rlxrng = peakpos(1):valleypos(1);
@@ -93,17 +93,13 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
     r.t = t(rlxrng);
     r.f = f(rlxrng);
     r.x = x(rlxrng);
-    r.T = T(rlxrng);
+    r.T = T(rlxrng);  
     r = rip_finder(r,par);
-    nzp = length(r.ripx);
-    r.cycleno = 0*ones(nzp,1);
-    r.pullingspeed = abs(median(diff(r.x)./diff(r.t)))*ones(nzp,1);
-    r.topforce = r.f(1)*ones(nzp,1);
-    nzp = numel(r.force);
-    if nzp < 1
+    nzips = length(r.rip_index);
+    if nzips < 1
       r.work = [];
     end
-    for zpno = 1:nzp
+    for zpno = 1:nzips
       r.work (zpno,1) = Crooks_work(r.force(zpno),r.deltax(zpno),...
         r.temperature(zpno),par);
     end
@@ -129,12 +125,14 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
     p.t = t(pullrng);
     p.f = f(pullrng);
     p.x = x(pullrng);
-    p.T = T(pullrng);   
+    p.T = T(pullrng);  
+    p.cycleno = cycleno;
     p = rip_finder(p,par);
-    nrp = length(p.force);
-    p.cycleno = repmat(cycleno,[nrp,1]);
-    p.topforce = repmat(p.f(end),[nrp,1]); 
-    p.pullingspeed = abs(median(diff(p.x)./diff(p.t)))*ones(nrp,1); 
+    p.cycleno = cycleno;
+    nrp = length(p.force); 
+    if nrp > 1 
+      p.cycleno = repmat(cycleno,[nrp,1]);
+    end
     
     bad = isempty(p.force) || p.force < 0;
     if par.maxrips > 1
@@ -143,10 +141,7 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
         p.(fn(i))(bad,:) = [];
       end
     end
-    nrp = length(p.force);
-    if nrp < 1
-      p.work = [];  % Bug fix 2025-09-05
-    end      
+    p.work = [];  % Bug fix 2025-09-05     
     for rpno = 1:nrp
       p.work(rpno,1) = Crooks_work(p.force(rpno),p.deltax(rpno), ...
         p.temperature(rpno),par);
@@ -161,15 +156,12 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
     r.x = x(rlxrng);
     r.T = T(rlxrng);    
     r = rip_finder(r,par);
-    nzp = length(r.ripx);
-    if nzp > 0 & r.force > 0
-      r.pullingspeed = abs(median(diff(r.x)./diff(r.t)))*ones(nzp,1);
-      for zpno = 1:nzp
+    nzips = length(r.ripx);
+    if nzips > 0 & r.force > 0
+      for zpno = 1:nzips
         r.work(zpno,1) = Crooks_work(r.force(zpno),r.deltax(zpno), ...
           r.temperature(zpno),par);
-      end
-      r.topforce = r.f(1)*ones(nzp,1);
-      r.cycleno = cycleno*ones(nzp,1);  
+      end  
       r = trim_trace(r,par);
       if ~isempty(r.force)
         relax = [relax;r];
@@ -179,7 +171,6 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
 
     if par.laterips  
       p = laterip_trace(r,p,par);
-      p.cycleno = cycleno;
     end
     p = trim_trace(p,par);
     if ~isempty(p.force)
@@ -197,18 +188,13 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
       p.f = f(pullrng);
       p.x = x(pullrng);
       p.T = T(pullrng);   
-      p.pullingspeed = 0;
-      p.cycleno = length(cycleno)+1;
-      p.topforce = p.f(end);
+      p.cycleno = length(cycleno)+1;  
       p = rip_finder(p,par);
-      nrp = length(p.force);
-      p.pullingspeed = abs(median(diff(p.x)./diff(p.t)))*ones(nrp,1);
-      p.topforce = p.topforce*ones(length(p.force),1);
-      p.cycleno = p.cycleno*ones(length(p.force),1);  
       nrp = length(p.ripx);
+
       if exist('r',"var")
-        nzp = length(r.ripx);
-        for zpno = 1:nzp
+        nzips = length(r.ripx);
+        for zpno = 1:nzips
           r.work(zpno,1) = Crooks_work(r.force(zpno),r.deltax(zpno), ...
             r.temperature(zpno),par);
         end
@@ -239,8 +225,11 @@ function [Trip,Tzip,pull,relax,t,f,x,T,peakpos,valleypos] = analyse_experiment(f
     hold on;
     if ~isempty(Trip)
       plot(Trip.Time(Trip.Fdot>0),Trip.Force(Trip.Fdot>0),'*r');
-      plot(Trip.Time(Trip.Fdot<0),Trip.Force(Trip.Fdot<0),'^r');
       textelements = [textelements,2];
+      if any(Trip.Fdot<0)
+        plot(Trip.Time(Trip.Fdot<0),Trip.Force(Trip.Fdot<0),'^r');
+        textelements = [textelements,3];
+      end
     end
     if ~isempty(Tzip)
       plot(Tzip.Time,Tzip.Force,'ok','MarkerFaceColor','w');

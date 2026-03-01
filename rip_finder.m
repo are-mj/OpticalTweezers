@@ -95,11 +95,10 @@ function s = lookforrip(s,sgn,par)
     "MinPeakDistance",par.supportlength);  
   warning('on','signal:findpeaks:largeMinPeakHeight');
 
-  % figure;plot(-sgn*(slope))
   if isempty(rip_index)  % No unfoldings found
     return
   end
-  [~,~,~,~,fdot,fstep,weight] = rip_finder_fit(s,rip_index,par);
+  [~,~,fdot,fstep,weight] = rip_finder_fit(s,rip_index,par);
   if isempty(fstep)
     return
   end
@@ -118,15 +117,15 @@ function s = lookforrip(s,sgn,par)
   end
   rip_index = rip_index(valid);
   maxrips = sum(valid);
-  n_rips = min(par.maxrips,maxrips);
+  nrips = min(par.maxrips,maxrips);
   
   % Repeat fitting after invalid rips are removed:
-  [s.pfx_a,s.pfx_b,~,~,fdot,fstep,weight,noise,s.fitrange] = ...
+  [s.pfx_a,s.pfx_b,fdot,fstep,weight,noise,s.fitrange] = ...
     rip_finder_fit(s,rip_index,par);
 
   quality = fstep.*weight;
   epsilon = numel(s.f)/20;
-  if n_rips > 1
+  if nrips > 1
     % If rips are very close, retain only one per cluster
     okrips = merge_rip_clusters(rip_index,quality,epsilon);
     rip_index = rip_index(okrips);
@@ -146,7 +145,12 @@ function s = lookforrip(s,sgn,par)
     s.fitrange = s.fitrange(best,:);
   end
 
-  for i = 1:length(rip_index)
+  s.pullingspeed = 0;
+  s.topforce = s.f(end);
+  s.pullingspeed = abs(median(diff(s.x)./diff(s.t)))*ones(nrips,1);
+  s.topforce = s.topforce*ones(nrips,1); 
+
+  for i = 1:nrips
     % Search for largest diff(-sgn*f) near best rip_index
     searchstart = max(rip_index(i)-2*par.supportlength,1);
     searchend = min(rip_index(i)+par.supportlength,n_points);
