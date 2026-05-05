@@ -1,38 +1,64 @@
-function r = valid_trace_part(f,sgn)
-% Remove flat psrts at beginning and end of trace
+function r = valid_trace_part(f,sgn,par)
+% Version 20260316.  Better at handling rips near peak x 
+% Remove flat parts at beginning of pull trace and end of relax trace
+  
   nf = numel(f);
   r = 1:nf;
 
-  % noise = std(f-smoothdata(f,"movmean",round(nf/10)));
-  % if noise > 1  % Data too noisy.  Accept full trace
+  % First remove any points with f > par.overstretch
+  if sgn > 0
+    highf = find(f>par.overstretch,1);
+    if ~isempty(highf)
+      f(highf:end) = [];
+      r = 1:length(f);
+    end
+  else
+    highf = find(f>par.overstretch,1,'last');
+    if ~isempty(highf)
+      f(1:highf) = [];
+      r = 1:length(f);
+    end
+  end
+  nf = length(f);
+  
+  f = sgn*f;
+  [n,~,bin] =  histcounts(f,100);  % 100 bins
+  nn = [0 n 0];
+
+  [pks,loc,w] =findpeaks([0,n,0],'MinPeakProminence',100);
+  w = ceil(w);
+
+  if isempty(pks)
+    return
+  end
+  if length(pks) > 2  % Too many flat parts. Discard trace
+    r = [];
+    return
+  end
+  % if any(loc >= 8 & loc < 95)
+  %   r = [];  % Flat part not near start or end
   %   return
   % end
-  firstgood = 1;
-  lastgood = nf;  
-  f = sgn*f;
-  n =  histcounts(f,linspace(min(f),max(f)));
-  warning('off','signal:findpeaks:largeMinPeakHeight');
-  [~,pks] =findpeaks([0,n,0],'minpeakheight',mean(n)*4);
-  pkstart = pks(pks<10)-1; % histogram peak near start
-  pkend = pks(pks>90)-1;  % histogram peak 
-  if isempty(pkstart)
-    pkstart = 1;
-  else
-    % Find any excess of data points near trace start
-    % i.e. flat part of trace at start
-    ixstart = find(n(pkstart(end):end)<mean(n)*2,1)+pkstart;
-    if ~isempty(ixstart)
-      firstgood = sum(n(1:ixstart(end)));
+  remove = [];
+  for pkno = 1:length(loc)
+    if loc(pkno)>95
+      flatpoints = find(bin>=loc(pkno)-w(pkno));
+    else
+      flatpoints = find(bin<=loc(pkno)+w(pkno));
+    end
+    % make sure flatpoints includes end points if relevant:
+    if nf-flatpoints(end) < nf/20
+      flatpoints(end)  = nf;
+    end
+    if flatpoints(1) < nf/20
+      flatpoints(1) = 1;
+    end
+    bad = min(flatpoints):max(flatpoints);
+    remove = union(remove,bad);
+    if loc >= 95
+      break   % merge all locs > 95
     end
   end
-  if ~isempty(pkend)
-    % Find any excess of data points near trace end
-    % i.e. flat part of trace at at end    
-    ixend = find(n(pkstart(1):pkend(1))<mean(n)*2,1,'last')+pkstart;
-    if ~isempty(ixend)
-      lastgood = nf-sum(n(ixend(1):end));
-    end
-  end
-  warning('on','signal:findpeaks:largeMinPeakHeight');
-  r = firstgood:lastgood;
+  r(remove) = [];
 end
+

@@ -3,11 +3,13 @@ function par = params
 
 %  SETTINGS:
 % Specify which rips to look for:
-  par.maxrips = 1;       % Maximum number of rips/zips accepted per trace
-  par.laterips = 0;      % 1: Look for rips in the relax trace. 0: skip
+  par.maxrips = 3;       % Maximum number of rips/zips accepted per trace
+  par.laterips = 1;      % 1: Look for rips in the relax trace. 0: skip
   par.maxpointspertrace = 1000; % Decimate time series if the mean number of 
                          % records per trace exceeds this value.
                          % Set to 0 for no decimation
+  par.minpointspertrace = 30;  % Skip very short traces
+  par.molecule = "none";						 
 
 % Worm-Like-Chain parameters
   % Top7:
@@ -28,14 +30,15 @@ function par = params
   par.minpeak_slope = 0.003; % Minimum slope peak height in singlerip_finder
   par.ripsteps = 1;      % Number of timesteps from rip start to steepest force change
   par.min_fstep = 0.4;   % Minimum reduction in force at an unfoding (pN)
-  par.overstretch = 55;  % Maximum rip/zip force (probably overstretch)
-  par.noisefactor = [2,1]; % Skip rips/zips if fstep/noise < par.noisefactor
+  par.min_latefstep = 0.7; % Minimum fstep for late step
+  par.overstretch = 60;  % Maximum rip/zip force (probably overstretch)
+  par.noisefactor = [2.4,1]; % Skip rips/zips if fstep/noise < par.noisefactor
                            % [rip,zip]   
-  par.maxzipfactor = 0.65; % Discard zips that occur at a higher force than
+  par.maxzipfactor = 0.45; % Discard zips that occur at a higher force than
                            % par.maxzipfactor*max(force for the current
                            % trace)
 % deltax limits (discard rips/zips outside limits)
-  par.deltaxlimits_rips = [5,30];
+  par.deltaxlimits_rips = [5,35];
   par.deltaxlimits_zips = [-30,-5];
   
 % Extra heating table;  

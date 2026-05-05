@@ -20,9 +20,9 @@ TRIP = [];
 TZIP = [];
 for i = 1:numel(files)
   % try
-    [Trip,Tzip,pull,relax,t,f,x,T] = analyse_experiment(files(i),plotting,par);
-    if plotting == 2
-      figure; plot(t,T)
+  [Trip,Tzip,pull,relax,data] = analyse_experiment(files(i),plotting,par);
+    if plotting == 2 && size(data,2)> 3
+      figure; plot(t,data(:,4))
       title(files(i));
     end
   % catch ME
@@ -31,7 +31,7 @@ for i = 1:numel(files)
   % end
   TRIP =[TRIP;Trip];
   TZIP = [TZIP;Tzip];
-  fprintf('Rips: %4d, Zips: %4d Filename: %s\n',height(Trip),height(Tzip),files(i));
+  fprintf('Rips: %4d, Zips: %4d Filename: %s  fileno %d\n',height(Trip),height(Tzip),files(i),i);
   if plotting
     drawnow;
   end

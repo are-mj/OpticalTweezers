@@ -1,4 +1,4 @@
-function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x) 
+function data = read_experiment_file(file,Tlist,detrend_x) 
 % Reads a test file from Steven Smiths's minitweezer instrument
 %   Can also read a file with only three columns (t,x,f)
 % Input: filename - including full path if not in Matlab's search path
@@ -10,6 +10,7 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
 %           Tlist = NaN:  Report temperatures as NaN
 %        detrend_x:  1: detrending of x, 0: no detrending  (default: 0)
 % Output:
+%    data = [t,f,x] (or [t,f,x,T] if temperature data are avaailable
 %    t   : Time (s) 
 %    f   : Force (pN)
 %    x   : Trap position (mean of two coluns A_dist_y and B_dist)
@@ -20,11 +21,7 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
 
 % Author: Are Mjaavatten
 
-  % Make sure all outputs are defined:
-  t = [];
-  f = [];
-  x = [];
-  T = [];
+  data = [];  % make sure the output is defined
 
   if nargin < 3
     % detrend_x = 1;  % Detrending of x is default
@@ -36,8 +33,6 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
   % Allow file name containing full path
   if isfile(file)
     filename = file;
-  % elseif ~isnan(str2double(file))  % Index in Filelist.m
-  %   filename = app.files(str2double(file));
   else
     filename = fullfile(datafolder,file);
   end
@@ -46,42 +41,43 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
   end
   filename = strrep(filename,'\','/');  % Use Unix separator
   warning('off','MATLAB:table:ModifiedAndSavedVarnames');
-  data = readtable(filename);
+  indata = readtable(filename);
   warning('on','MATLAB:table:ModifiedAndSavedVarnames');
 
-  data = rmmissing(data);  % Remove rows with NaNs
+  indata = rmmissing(indata);  % Remove rows with NaNs or missing values
 
 %% Brief file format
-  if width(data) == 3   
-    cols = data.Properties.VariableNames;
+  if width(indata) == 3   
+    cols = indata.Properties.VariableNames;
     if any(contains(cols,'t'))&&any(contains(cols,'x')) ...
         &&any(contains(cols,'f'))
-      t = data.t;
-      x = data.x;
-      f = data.f;     
+      t = indata.t;
+      x = indata.x;
+      f = indata.f;     
     else
-      t = data.Var1;
-      x = data.Var2;
-      f = data.Var3;
-      T = NaN(size(t));
+      t = indata.Var1;
+      x = indata.Var2;
+      f = indata.Var3;
     end
+    data = [t,f,x];
+    data(any(isnan(data),2),:) = [];
     return
   end
-%% Full file format:
-  timecol = contains(data.Properties.VariableNames,'time_sec_');
+%% Full file format (Mini Tweeezers from Steven B. Smith)
+  timecol = contains(indata.Properties.VariableNames,'time_sec_');
   if any(timecol)
-    t = data.time_sec_;
+    t = indata.time_sec_;
   else
     cps = 4000;  % CycleCounts per second
-    countscol = find(contains(data.Properties.VariableNames,'CycleCount'));
+    countscol = find(contains(indata.Properties.VariableNames,'CycleCount'));
     if any(countscol)
-      % t = data.CycleCount/cps;
-      t = table2array(data(:,countscol))/cps;
+      % t = indata.CycleCount/cps;
+      t = table2array(indata(:,countscol))/cps;
     end    
   end
 
   if numel(t) < 10
-    return
+    error('Too few rows in %s\n',filename)
   end
   start = 2;  % Skip first record, which seldom makes sense
   % start = 1;
@@ -90,55 +86,54 @@ function [t,f,x,T] = read_experiment_file(file,Tlist,detrend_x)
     start = negdt+1;  % skip any high t values at start
   end
   t = t(start:end);
-  f = -data.Y_force(start:end);
-  xA = data.A_dist_Y(start:end);
-  xB = data.B_dist_Y(start:end);
-  status = data.Status(start:end);  
+  f = -indata.Y_force(start:end);
+  xA = indata.A_dist_Y(start:end);
+  xB = indata.B_dist_Y(start:end);
+  status = indata.Status(start:end);  
   x = mean([xA,xB],2);
   if detrend_x
     x = detrend(x); 
   end
+  data = [t,f,x];
+  data(any(isnan(data),2),:) = [];
 
-  if nargout > 3  % Skip if t not requested
-    % *** Temperature  ***  
-    try
-      % Read bath temperature from COM file.
-      [Tbath,instrument] = T_from_COM(filename); % Temperature outside cell
-      T = ones(size(t))*Tbath;
-    catch
-      T = 5*ones(size(t));  % Default bath temperature if COM file not found
-    end
-    if isempty(Tlist)  % Try reading from params.m
-      if exist("params.m","file")
-        par = params;
-        if isfield(par,'Tlist') && isfield(par,"Instrumentname")
-          instrumentno = find(strcmp(instrument,par.Instrumentname));
-          if isempty(instrumentno)
-            error('Unknown instrument: %s. Cannot determine temperature',instrument);
-          else
-            Tlist = par.Tlist{instrumentno};
-          end
-        end
-      else
-        error('Parameter function params.m not found')
-      end
-    end
-  
-    if isscalar(Tlist)  % This option also handles Tlist == NaN						   
-      T = Tlist*ones(size(t)); % Fixed T specified
-      return
-    end
-   
-    if ~isnan(T)
-      % Read heater setting from digits 2 and 3 in the status column 
-      heater_setting = floor(rem(status,1000)/10);  % Number from digits 2 and 3
-      heater_setting(status<1000) = NaN; 
-      for ii = 1:size(Tlist,2)
-        ix = heater_setting==Tlist(1,ii);
-        T(ix) = T(ix) + Tlist(2,ii);				   
-      end
-    end
-  else
-    T = NaN;
+  % *** Temperature  ***  
+  T_OK = false;
+  try
+    % Read bath temperature from COM file.
+    [Tbath,instrument] = T_from_COM(filename); % Temperature outside cell
+    T = ones(size(t))*Tbath;
+  catch
+    return
   end
+  if isempty(Tlist)  % Try reading from params.m
+    if exist("params.m","file")
+      par = params;
+      if isfield(par,'Tlist') && isfield(par,"Instrumentname")
+        instrumentno = find(strcmp(instrument,par.Instrumentname));
+        if isempty(instrumentno)
+          error('Unknown instrument: %s. Cannot determine temperature',instrument);
+        else
+          Tlist = par.Tlist{instrumentno};
+        end
+      end
+    else
+      error('Parameter function params.m not found')
+    end
+  end
+
+  if isscalar(Tlist)  % This option also handles Tlist == NaN						   
+    T = Tlist*ones(size(t)); % Fixed T specified
+  end
+ 
+  if ~isnan(T)
+    % Read heater setting from digits 2 and 3 in the status column 
+    heater_setting = floor(rem(status,1000)/10);  % Number from digits 2 and 3
+    heater_setting(status<1000) = NaN; 
+    for ii = 1:size(Tlist,2)
+      ix = heater_setting==Tlist(1,ii);
+      T(ix) = T(ix) + Tlist(2,ii);				   
+    end
+  end
+  data = [data,T];
 end

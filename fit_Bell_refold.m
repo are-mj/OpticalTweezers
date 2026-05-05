@@ -26,7 +26,7 @@ function [theta,resnorm] = fit_Bell_refold(pd_obs,edges,Tmean,Fdot,theta0)
   lb = [0;0];
   ub = [50;10];
 
-  probfun = @(theta,F)Bell_refold_probability(theta,F,Tmean,Fdot);
+  probfun = @(theta,F) Bell_refold_probability(theta,F,Tmean,Fdot);
 
   % Fit model parameters to data:
   [theta,resnorm,resid,exitflag,~,~,J] = ...

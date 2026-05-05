@@ -54,28 +54,22 @@ function  [peakpos,valleypos] = peaksandvalleys(f,threshold,lim,plotting)
   if nf-valleypos(end) < 10
     valleypos(end) = [];
   end
-  % Remove the start peak if the value is too low compared to the next 
-  % three peaks.  Correspondingly for the start valley.
+
+  % Handle bad data before first peak or valley:
+  forcerange = [mean(f(peakpos)),mean(f(valleypos))];
   if peakpos(1) < valleypos(1)
-    peakval = f(peakpos);
-    if peakval(1)/mean(peakval(2:(min(numel(peakpos),4))))<0.8
+    if (forcerange(1) - f(peakpos(1)))/diff(forcerange) < 0.6
       peakpos(1) = [];  % handle bad data before first peak
     end
   else
-    valleyval=f(valleypos);
-    if valleyval(1)/mean(valleyval(2:(min(numel(valleypos),4))))>1.2
-      valleypos(1) = [];  % handle bad data before first valley
+    if (f(valleypos(1))-forcerange(2))/diff(forcerange)  > 0.4
+      valleypos(1) = [];  % handle bad data before first peak
     end
   end
-  % This comand messes up the alternating peak-valley sequence:
-  % valleypos(f(valleypos)<0) = []; % renove unrealistic valleys
-
   if plotting
     figure;
     plot(f);
     hold on;
-    % plot(high(:,1),f(high(:,1)),'^r');
-    % plot(high(:,2),f(high(:,2)),'vk');  
     plot(peakpos,f(peakpos),'ok');
     plot(valleypos,f(valleypos),'om')
   end
