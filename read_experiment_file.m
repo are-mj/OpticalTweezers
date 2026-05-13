@@ -76,14 +76,12 @@ function data = read_experiment_file(file,Tlist,detrend_x)
     end    
   end
 
-  if numel(t) < 10
-    error('Too few rows in %s\n',filename)
-  end
-  start = 2;  % Skip first record, which seldom makes sense
-  % start = 1;
-  negdt = find(diff(t(1:10))<0);
+  startrows = 1:min(10,length(t));
+  negdt = find(diff(t(startrows))<0);
   if ~isempty(negdt)
     start = negdt+1;  % skip any high t values at start
+  else
+    start = 2;  % Skip first record, which seldom makes sense
   end
   t = t(start:end);
   f = -indata.Y_force(start:end);
@@ -91,6 +89,12 @@ function data = read_experiment_file(file,Tlist,detrend_x)
   xB = indata.B_dist_Y(start:end);
   status = indata.Status(start:end);  
   x = mean([xA,xB],2);
+  if numel(t) < 10
+    T = NaN(size(t));
+    data = [t,x,f,T];
+    % warning('Too few rows in %s\n',filename)
+    return
+  end
   if detrend_x
     x = detrend(x); 
   end

@@ -9,6 +9,7 @@ function s = rip_finder(data,range,par)
 %
 % Output
 %  s: output trace struct with fields:
+  %  range
   %  force 
   %  deltax
   %  time
@@ -99,7 +100,7 @@ function s = rip_finder(data,range,par)
   rip_index = rip_index(valid);
   
 
-  % Remove lower quality rips in close rip lusters :
+  % Remove lower quality rips in close rip clusters :
   epsilon = numel(f)/20;
   quality = fstep.*weight;
   quality = quality(valid);
@@ -122,6 +123,7 @@ function s = rip_finder(data,range,par)
   
     if sgn*fstep(k) >= par.min_fstep  & sgn*quality(k) > 0.35
       s(j,1) = empty_trace;
+      s(j,1).range = range;
       s(j,1).ripx = x(rippos);
       s(j,1).pfx_b = pfx_b(k,:);
       s(j,1).pfx_a = pfx_a(k,:);
