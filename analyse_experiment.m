@@ -1,15 +1,29 @@
-function [Trip,Tzip,pull,relax,data,peakpos,valleypos] = analyse_experiment(file,plotting,par)
-% Generalised version of analyse_experiment that can identify multiple rips 
-% per trace and also late rips (i.e. rips in relaxing trace). 
-% To identfy multiple rips: set par.maxrips > 1
-% To identify late rips: set par.laterips = 1
-% To identify late rips in Trip use logical array laterips = Trip.Fdot<0 
+function [Trip,Tzip,data,peakpos,valleypos] ...
+  = analyse_experiment(file,plotting,par)
+% Find unfolding and refolding evente in optical tweezers experiment file
+% Input:  
+%   file     - experiment file name
+%   plotting - 0: no plot (default), 1: plot force vs. time. Mark evebts.
+%   par      - parameter struct.  Dafault: par = params.
+% par contains settings and tuning parameters, e.g
+%   par.maxrips:  Maximum rips identified per trace (also maximumm zips)
+%   par.laterips: Record also rip occuring in the rlaxation trace
+%     To identify late rips in TRIP: laterips = Trip.Fdot<0.
+% Output:
+%   Trip, Tzip: Matlab results tables with one row per rip or zip.  
+%     Columns for Rip(or zip) Force, tTme, Deltax and more
+%   data: n by 4 array of time series data: data = [t,f,x,T]
+%     One row per line in experiment file
+%   peakpos, vallepos: row no for force peaks and valleys
+%   
 
   % Make sure all output variables are defined:
   Trip = [];
   Tzip = [];
   pull = [];
   relax = [];
+  peakpos = [];
+  valleypos = [];
 
   % Default input:
   if nargin < 3
@@ -47,6 +61,10 @@ function [Trip,Tzip,pull,relax,data,peakpos,valleypos] = analyse_experiment(file
   end
 
   data = read_experiment_file(filename);
+  if size(data,1) <= 10
+    warning('Too few data rows in file')
+    return
+  end
   f = data(:,2);
   [peakpos,valleypos] = peaksandvalleys(f,par.threshold,par.lim,0);
   if isempty(peakpos) || isempty(valleypos)
