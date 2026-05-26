@@ -19,7 +19,9 @@ function T = create_table(st)
       Trapx = st(k).ripx(i);
       Fdot = st(k).fdot(i);
       Slope_b = st(k).pfx_b(i,1);
+      Offset_b = st(k).pfx_b(i,2);
       Slope_a = st(k).pfx_a(i,1);
+      Offset_a = st(k).pfx_b(i,2);
       Pullingspeed = st(k).pullingspeed(i); 
       Temperature = st(k).temperature(i);
       Topforce = st(k).topforce(i);
@@ -29,8 +31,8 @@ function T = create_table(st)
       Cycleno = st(k).cycleno(i);
       Work = st(k).work(i);
       T = [T;table(Filename,Time,Deltax,Force,Temperature,Forceshift,Trapx,...
-              Fdot,Slope_b,Slope_a,Pullingspeed,Topforce,Noise,Fitrange,...
-              Cycleno,Work,Timestep)];
+              Fdot,Slope_b,Offset_b,Slope_a,Offset_a,Pullingspeed, ...
+              Topforce,Noise,Fitrange,Cycleno,Work,Timestep)];
     end
   end
 end

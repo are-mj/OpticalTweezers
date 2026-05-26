@@ -3,7 +3,7 @@ function r = valid_trace_part(f,sgn,par)
 % Remove flat parts at beginning of pull trace and end of relax trace
   
   nf = numel(f);
-  r = 1:nf;
+  r = (1:nf)';
 
   % First remove any points with f > par.overstretch
   if sgn > 0

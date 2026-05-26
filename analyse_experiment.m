@@ -3,7 +3,7 @@ function [Trip,Tzip,data,peakpos,valleypos] ...
 % Find unfolding and refolding evente in optical tweezers experiment file
 % Input:  
 %   file     - experiment file name
-%   plotting - 0: no plot (default), 1: plot force vs. time. Mark evebts.
+%   plotting - 0: no plot (default), 1: plot force vs. time. Mark events.
 %   par      - parameter struct.  Dafault: par = params.
 % par contains settings and tuning parameters, e.g
 %   par.maxrips:  Maximum rips identified per trace (also maximumm zips)
@@ -20,8 +20,6 @@ function [Trip,Tzip,data,peakpos,valleypos] ...
   % Make sure all output variables are defined:
   Trip = [];
   Tzip = [];
-  pull = [];
-  relax = [];
   peakpos = [];
   valleypos = [];
 
@@ -108,7 +106,6 @@ function [Trip,Tzip,data,peakpos,valleypos] ...
       if ~isempty(newr)
         newr.filename = shortname;
         newr.cycleno = 0;
-        relax= newr;
         Trip = create_table(newr);          
       end  
     end    
@@ -128,8 +125,7 @@ function [Trip,Tzip,data,peakpos,valleypos] ...
 
     % Check for rips in pulling trace (late rips).  All rips are sorted on
     % fstep and the top par.maxrips rips are retained. If par.laterips == 0
-    % a late rip may thus result in lesser rips in the pulling trace being 
-    % skipped.
+    % any late rip is skipped and not counted.
     pullrange = rng([1,pkpos]);
     p = rip_finder(data,pullrange,par);  % Rips in pulling trace
     % Check for late rips. 
@@ -137,8 +133,22 @@ function [Trip,Tzip,data,peakpos,valleypos] ...
     p_late = laterip(data,fullrange,par);  % Late rips
 	% Sort on force shift:
     p1 = [p;p_late];
+
+	  % Remove empty trace structs
+    okcells = ~cellfun(@isempty,{p1.force});
+    p1 = p1(okcells);
+    ntraces = length(p1);
+    if ntraces == 0
+      continue
+    end
+
+    % Sort on force shift:
     [fstep,ix] = sort([p1.fstep],'descend');
     maxrips = min(par.maxrips,length(fstep));
+    % Select the maxrips traces with the highest fstep:
+    p1 = p1(ix(1:maxrips));  
+    % Make sure the table entries are in time order:
+    [~,ix] = sort([p1.time]);     
     for ripno = 1:maxrips        
       newp = trim_trace(data,p1(ix(ripno)),par);
       if ~isempty(newp.force)
@@ -149,7 +159,6 @@ function [Trip,Tzip,data,peakpos,valleypos] ...
         end
         newp.filename = shortname;
         newp.cycleno = cycleno;
-        pull = [pull;newp];
         Trip = [Trip;create_table(newp)];          
       end  
     end  
@@ -168,7 +177,6 @@ function [Trip,Tzip,data,peakpos,valleypos] ...
         end
         newr.filename = shortname;
         newr.cycleno = cycleno;
-        relax = [relax;newr];
         Tzip = [Tzip;create_table(newr)];          
       end  
     end 
@@ -187,7 +195,6 @@ function [Trip,Tzip,data,peakpos,valleypos] ...
       end
       p(ripno).filename = shortname;
       p(ripno).cycleno = cycleno+1;  
-      pull = [pull;p(ripno)];
       Trip = [Trip;create_table(p(ripno))]; 
     end   
   end
