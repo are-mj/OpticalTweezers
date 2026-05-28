@@ -3,8 +3,8 @@ function par = params
 
 %  SETTINGS:
 % Specify which rips to look for:
-  par.maxrips = 3;       % Maximum number of rips/zips accepted per trace
-  par.laterips = 1;      % 1: Look for rips in the relax trace. 0: skip
+  par.maxrips = 1;       % Maximum number of rips/zips accepted per trace
+  par.laterips = 0;      % 1: Look for rips in the relax trace. 0: skip
   par.maxpointspertrace = 1000; % Decimate time series if the mean number of 
                          % records per trace exceeds this value.
                          % Set to 0 for no decimation
