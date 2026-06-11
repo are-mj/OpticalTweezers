@@ -106,7 +106,7 @@ function [Trip,Tzip,data,peakpos,valleypos] ...
       if ~isempty(newr)
         newr.filename = shortname;
         newr.cycleno = 0;
-        Trip = create_table(newr);          
+        Tzip = create_table(newr);          
       end  
     end    
   end  

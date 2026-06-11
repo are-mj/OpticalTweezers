@@ -22,7 +22,8 @@ function r = valid_trace_part(f,sgn,par)
   nf = length(f);
   
   f = sgn*f;
-  [n,~,bin] =  histcounts(f,100);  % 100 bins
+  nbins = 100;
+  [n,~,bin] =  histcounts(f,nbins);  
   nn = [0 n 0];
 
   [pks,loc,w] =findpeaks([0,n,0],'MinPeakProminence',100);
@@ -32,7 +33,7 @@ function r = valid_trace_part(f,sgn,par)
     return
   end
   if length(pks) > 2  % Too many flat parts. Discard trace
-    r = [];
+    % r = [];
     return
   end
   % if any(loc >= 8 & loc < 95)
@@ -41,7 +42,7 @@ function r = valid_trace_part(f,sgn,par)
   % end
   remove = [];
   for pkno = 1:length(loc)
-    if loc(pkno)>95
+    if loc(pkno)>=floor(nbins*0.95)
       flatpoints = find(bin>=loc(pkno)-w(pkno));
     else
       flatpoints = find(bin<=loc(pkno)+w(pkno));
@@ -56,7 +57,7 @@ function r = valid_trace_part(f,sgn,par)
     bad = min(flatpoints):max(flatpoints);
     remove = union(remove,bad);
     if loc >= 95
-      break   % merge all locs > 95
+      break   % merge all locs >= 95
     end
   end
   r(remove) = [];

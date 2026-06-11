@@ -129,13 +129,15 @@ function s = rip_finder(data,range,par)
       s(j,1).pfx_a = pfx_a(k,:);
       % The force is found by linear interpolation at s.ripx
       s(j,1).force = polyval(s(j,1).pfx_b,s(j,1).ripx);
-      if s(j,1).force > f(end)
-        % Let s.pfx_a be s.pfx_b shifted by fstep
-        s(j,1).pfx_a = [s(j,1).pfx_b(1),s(j,1).pfx_b(2)-fstep(k)];
-      elseif s(j,1).force < f(1)
-        s(j,1) = [];
-        return
-      end       
+      if sgn > 0  % Treat case where rip force > f(end)
+        if s(j,1).force > f(end)
+            % Let s.pfx_a be s.pfx_b shifted by fstep
+            s(j,1).pfx_a = [s(j,1).pfx_b(1),s(j,1).pfx_b(2)-fstep(k)];
+          elseif s(j,1).force < f(1)
+            s(j,1) = empty_trace;
+            return
+        end   
+      end
       xend = (s(j,1).force-s(j,1).pfx_a(2))/s(j,1).pfx_a(1);
       s(j,1).deltax = xend - s(j,1).ripx;
       s(j,1).time = t(rippos);

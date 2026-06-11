@@ -56,22 +56,23 @@ function  [peakpos,valleypos] = peaksandvalleys(f,threshold,lim,plotting)
   end
 
   % Handle bad data before first peak or valley:
-  forcerange = [mean(f(peakpos)),mean(f(valleypos))];
-  if peakpos(1) < valleypos(1)
-    if (forcerange(1) - f(peakpos(1)))/diff(forcerange) < 0.6
-      peakpos(1) = [];  % handle bad data before first peak
-    end
-  else
-    if (f(valleypos(1))-forcerange(2))/diff(forcerange)  > 0.4
-      valleypos(1) = [];  % handle bad data before first peak
-    end
-  end
+  % These tests do now always work as expected.  Consider removing.
+  % forcerange = [mean(f(peakpos)),mean(f(valleypos))];
+  % if peakpos(1) < valleypos(1)
+  %   if (forcerange(1) - f(peakpos(1)))/diff(forcerange) < 0.6
+  %     peakpos(1) = [];  % handle bad data before first peak
+  %   end
+  % else
+  %   if (f(valleypos(1))-forcerange(2))/diff(forcerange)  > 0.4
+  %     valleypos(1) = [];  % handle bad data before first peak
+  %   end
+  % end
   if plotting
     figure;
     plot(f);
     hold on;
-    plot(peakpos,f(peakpos),'ok');
-    plot(valleypos,f(valleypos),'om')
+    plot(peakpos,f(peakpos),'om');
+    plot(valleypos,f(valleypos),'ok')
   end
 end
 
